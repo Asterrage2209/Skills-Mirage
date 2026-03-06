@@ -50,6 +50,7 @@ const Overview = () => {
     const [skillsData, setSkillsData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     useEffect(() => {
         let mounted = true;
@@ -66,7 +67,7 @@ const Overview = () => {
                     setLoading(false);
                 }
             } catch (err) {
-                console.error("Error loading mock data to real data:", err);
+                console.error("Error loading data:", err);
                 if (mounted) setLoading(false);
             }
         };
@@ -85,6 +86,7 @@ const Overview = () => {
             setSummary(sum);
             setHiringData(hire);
             setSkillsData(skills);
+            setRefreshTrigger(prev => prev + 1);
         } catch (err) {
             console.error("Error refreshing data:", err);
         } finally {
@@ -164,7 +166,7 @@ const Overview = () => {
                 </div>
             </div>
 
-            <LatestJobs />
+            <LatestJobs refreshTrigger={refreshTrigger} />
         </div>
     );
 };

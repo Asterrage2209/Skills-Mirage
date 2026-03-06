@@ -182,7 +182,7 @@ const HiringTrends = () => {
                             <PieChart>
                                 <Pie
                                     data={sectorData}
-                                    cx="50%"
+                                    cx="40%"
                                     cy="50%"
                                     innerRadius={80}
                                     outerRadius={110}

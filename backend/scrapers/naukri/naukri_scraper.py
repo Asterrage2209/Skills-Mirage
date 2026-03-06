@@ -25,40 +25,13 @@ ROLES = [
 
 
 CITIES = [
-    "pune",
-    "mumbai",
-    "bangalore",
-    "delhi",
-    "hyderabad",
-    "chennai",
-    "ahmedabad",
-    "indore",
-    "jaipur",
-    "lucknow",
-    "kolkata",
-    "noida",
-    "gurgaon",
-    "coimbatore",
-    "kochi",
-    "trivandrum",
-    "nagpur",
-    "bhopal",
-    "surat",
-    "vadodara",
-    "patna",
-    "chandigarh",
-    "bhubaneswar",
-    "visakhapatnam",
-    "vijayawada",
-    "nashik",
-    "mysore",
-    "madurai",
-    "raipur",
-    "dehradun",
+    "india"
 ]
 
 
-MAX_PAGES = 4
+MAX_PAGES = 3
+SCRAPER_JOB_LIMIT = 60
+
 
 
 OUTPUT_FILE = Path(__file__).resolve().parents[2] / "data" / "raw_jobs.json"
@@ -144,26 +117,17 @@ def _scrape_role_city_matrix(driver, roles, cities, max_pages, save_debug_html):
                         logger.info("Saved debug search HTML: %s", snapshot)
 
                 for job in cards:
-                    if job["job_url"]:
-                        try:
-                            detail_html = fetch_rendered_html(
-                                driver, job["job_url"], wait_selector="body", timeout=8
-                            )
-                            description = extract_job_description(detail_html)
-                            if description:
-                                job["description"] = description
-                            else:
-                                detail_desc_missing += 1
-                                logger.debug("No detail description parsed for job URL: %s", job["job_url"])
-                        except Exception:
-                            failed_job_pages += 1
-                            logger.exception("Failed job page: %s", job["job_url"])
-
                     job["ai_mentions"] = detect_ai_mentions(job.get("description") or "")
                     job["query_role"] = role
                     job["query_city"] = city
                     jobs.append(job)
+                    if len(jobs) >= SCRAPER_JOB_LIMIT:
+                        break
                 logger.info("Accumulated jobs so far: %s", len(jobs))
+                if len(jobs) >= SCRAPER_JOB_LIMIT:
+                    break
+            if len(jobs) >= SCRAPER_JOB_LIMIT:
+                break
 
     return {
         "jobs": jobs,
@@ -301,26 +265,17 @@ def run_scraper():
                             logger.info("Saved debug search HTML: %s", snapshot)
 
                     for job in cards:
-                        if job["job_url"]:
-                            try:
-                                detail_html = fetch_rendered_html(
-                                    driver, job["job_url"], wait_selector="body", timeout=8
-                                )
-                                description = extract_job_description(detail_html)
-                                if description:
-                                    job["description"] = description
-                                else:
-                                    detail_desc_missing += 1
-                                    logger.debug("No detail description parsed for job URL: %s", job["job_url"])
-                            except Exception as exc:
-                                failed_job_pages += 1
-                                logger.exception("Failed job page: %s", job["job_url"])
-
                         job["ai_mentions"] = detect_ai_mentions(job.get("description") or "")
                         job["query_role"] = role
                         job["query_city"] = city
                         jobs.append(job)
+                        if len(jobs) >= SCRAPER_JOB_LIMIT:
+                            break
                     logger.info("Accumulated jobs so far: %s", len(jobs))
+                    if len(jobs) >= SCRAPER_JOB_LIMIT:
+                        break
+                if len(jobs) >= SCRAPER_JOB_LIMIT:
+                    break
 
             if len(jobs) == 0:
                 logger.warning(

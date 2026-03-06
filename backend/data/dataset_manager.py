@@ -96,7 +96,7 @@ def append_jobs(new_jobs):
         logger.info(f"Appended {added} new jobs. Resaving dataset...")
         save_dataset()
 
-def get_latest_jobs(limit=50):
+def get_latest_jobs(limit=100):
     if _jobs_df is None:
         load_dataset()
         
@@ -110,11 +110,19 @@ def get_latest_jobs(limit=50):
     result = []
     for row in top_records:
         loc = row.get("joblocation_address", "")
-        city = str(loc).split(",")[0].strip() if loc else "Unknown"
+        location = str(loc).split(",")[0].strip() if loc else "Unknown"
+        
+        # Ensure skills are a string or list
+        skills = row.get("skills", "")
+        if isinstance(skills, list):
+            skills = ", ".join(skills)
+            
         result.append({
             "jobtitle": row.get("jobtitle", ""),
             "company": row.get("company", ""),
-            "city": city,
+            "location": location,
+            "skills": skills,
+            "experience": row.get("experience", ""),
             "postdate": row.get("postdate", "")
         })
     return result

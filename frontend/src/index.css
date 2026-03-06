@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    /* other shadcn defaults can go here if needed, but we rely on tailwind config colors */
+  }
+
+  body {
+    @apply bg-background text-textPrimary antialiased selection:bg-accent/30;
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+@layer components {
+  /* Common UI generic styles for Hackathon speed */
+  .card {
+    @apply bg-card rounded-2xl p-6 border border-white/5 shadow-lg relative overflow-hidden;
+  }
+  
+  .card-glow::before {
+    content: '';
+    @apply absolute -top-24 -right-24 w-48 h-48 bg-accent/20 rounded-full blur-3xl pointer-events-none;
+  }
+
+  .btn-primary {
+    @apply bg-accent hover:bg-accent/90 text-white font-medium px-4 py-2 rounded-lg transition-all active:scale-95;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary/80 text-textPrimary font-medium px-4 py-2 rounded-lg border border-white/10 transition-all active:scale-95;
+  }
+
+  .input-field {
+    @apply bg-secondary border border-white/10 rounded-lg px-4 py-2 text-textPrimary placeholder:text-textSecondary focus:outline-none focus:ring-2 focus:ring-accent/50 w-full transition-all;
+  }
+}

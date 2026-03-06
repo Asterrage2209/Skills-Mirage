@@ -1,0 +1,15 @@
+# Python files
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.env
+
+# Node files
+node_modules/
+dist/
+.vite/
+
+# OS files
+.DS_Store
+Thumbs.db

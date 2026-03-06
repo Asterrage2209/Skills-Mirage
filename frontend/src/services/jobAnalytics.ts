@@ -1,0 +1,78 @@
+import {
+  getScrapedJobsApi,
+  getVulnerabilityApi,
+  getHiringTrendsApi,
+  getSkillTrendsApi,
+  getDashboardStatsApi,
+  getLatestJobsApi,
+  getTopCitiesApi,
+  getIndustryDistributionApi,
+  getTopRolesApi
+} from './api';
+
+
+export const refreshJobsData = async () => {
+  // Can just trigger a scrape or just return true, handled by generic refresh now
+  await getScrapedJobsApi(true);
+};
+
+export const getDashboardSummary = async () => {
+  const stats = await getDashboardStatsApi();
+  return {
+    totalJobs: stats.total_jobs,
+    topCity: stats.top_city,
+    topSkill: stats.most_in_demand_skill,
+    topRole: stats.most_common_role,
+  };
+};
+
+export const getHiringTrends = async () => {
+  const trends = await getHiringTrendsApi();
+  // Map from backend { month, job_count } to { name, value }
+  return trends.map((t: any) => ({
+    name: t.month,
+    value: t.job_count
+  }));
+};
+
+export const getTopSkills = async () => {
+  const trends = await getSkillTrendsApi();
+  // We can combine rising_skills for top skills display, or just use rising
+  return trends.rising_skills.map((s: any) => ({
+    name: s.name,
+    dev: parseInt(s.growth.replace('+', '')) || 0,
+  }));
+};
+
+export const getSkillTrends = async () => {
+  return await getSkillTrendsApi();
+};
+
+export const getVulnerabilityRows = async () => {
+  const vulnerability = await getVulnerabilityApi();
+  return Object.entries(vulnerability)
+    .map(([role, score]) => ({
+      role,
+      city: 'Various',
+      score: Number(score),
+      trend: Number(score) >= 60 ? '+high' : Number(score) >= 30 ? '+moderate' : '+low',
+      hiring: Number(score) >= 60 ? '-declining' : '+stable',
+    }))
+    .sort((a, b) => b.score - a.score);
+};
+
+export const getLatestJobs = async () => {
+  return await getLatestJobsApi();
+};
+
+export const getTopCities = async () => {
+  return await getTopCitiesApi();
+};
+
+export const getIndustryDistribution = async () => {
+  return await getIndustryDistributionApi();
+};
+
+export const getTopRoles = async () => {
+  return await getTopRolesApi();
+};

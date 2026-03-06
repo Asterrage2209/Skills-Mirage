@@ -4,6 +4,7 @@ import {
   getVulnerabilityRegionsApi,
   getHiringTrendsApi,
   getSkillTrendsApi,
+  getSkillTrendYearsApi,
   getDashboardStatsApi,
   getLatestJobsApi,
   getTopCitiesApi,
@@ -39,8 +40,8 @@ export const getHiringTrends = async () => {
   }));
 };
 
-export const getTopSkills = async () => {
-  const trends = await getSkillTrendsApi();
+export const getTopSkills = async (year?: number) => {
+  const trends = await getSkillTrendsApi(year);
   // We can combine rising_skills for top skills display, or just use rising
   return trends.rising_skills.map((s: any) => ({
     name: s.name,
@@ -48,8 +49,12 @@ export const getTopSkills = async () => {
   }));
 };
 
-export const getSkillTrends = async () => {
-  return await getSkillTrendsApi();
+export const getSkillTrends = async (year?: number) => {
+  return await getSkillTrendsApi(year);
+};
+
+export const getSkillTrendYears = async () => {
+  return await getSkillTrendYearsApi();
 };
 
 export const getSkillGapApiWrapper = async () => {

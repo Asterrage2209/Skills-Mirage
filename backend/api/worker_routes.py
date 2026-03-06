@@ -28,7 +28,8 @@ def get_worker_profile(current_user: dict = Depends(get_current_user)):
         "role_description": current_user.get("role_description"),
         "skills": current_user.get("skills", []),
         "risk_score": current_user.get("risk_score"),
-        "ai_vulnerability": current_user.get("ai_vulnerability")
+        "ai_vulnerability": current_user.get("ai_vulnerability"),
+        "reskilling_path": current_user.get("reskilling_path")
     }
 
 @router.post("/profile")
@@ -71,7 +72,8 @@ def update_worker_profile(profile: WorkerProfile, current_user: dict = Depends(g
             "role_description": profile.role_description,
             "skills": parsed.get("skills", []),
             "risk_score": risk,
-            "ai_vulnerability": ai_vulnerability
+            "ai_vulnerability": ai_vulnerability,
+            "reskilling_path": path
         }}
     )
     logging.info("Mongo profile update successful")

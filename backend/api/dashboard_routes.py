@@ -1,11 +1,12 @@
 import json
 from pathlib import Path
 from collections import Counter
+from typing import Optional
 
 from fastapi import APIRouter
 from data.dataset_manager import get_all_jobs, get_latest_jobs
 from intelligence.hiring_trends import compute_hiring_trends
-from intelligence.skill_trends import compute_skill_trends, compute_skill_gap
+from intelligence.skill_trends import compute_skill_trends, compute_skill_gap, get_available_job_years
 from intelligence.vulnerability_index import compute_vulnerability_index
 from scrapers.naukri.naukri_scraper import run_scraper
 from db.mongo import users_collection
@@ -48,8 +49,12 @@ def hiring_trends():
     return compute_hiring_trends()
 
 @router.get("/skill-trends")
-def skill_trends():
-    return compute_skill_trends()
+def skill_trends(year: Optional[int] = None):
+    return compute_skill_trends(year=year)
+
+@router.get("/skill-trend-years")
+def skill_trend_years():
+    return {"years": get_available_job_years()}
 
 @router.get("/vulnerability")
 def vulnerability():

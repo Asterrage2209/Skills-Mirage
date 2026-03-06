@@ -1,8 +1,34 @@
 from collections import Counter
 from data.dataset_manager import get_all_jobs, get_all_courses
 
-def compute_skill_trends():
+def _extract_year(postdate_value):
+    postdate = str(postdate_value or "").strip()
+    if len(postdate) >= 4 and postdate[:4].isdigit():
+        return int(postdate[:4])
+    return None
+
+
+def get_available_job_years():
     jobs = get_all_jobs()
+    years = []
+    for job in jobs:
+        year = _extract_year(job.get("postdate", ""))
+        if year is not None:
+            years.append(year)
+    return sorted(set(years), reverse=True)
+
+
+def compute_skill_trends(year=None):
+    jobs = get_all_jobs()
+
+    if year is not None:
+        jobs = [job for job in jobs if _extract_year(job.get("postdate", "")) == year]
+
+    if not jobs:
+        return {
+            "rising_skills": [],
+            "declining_skills": []
+        }
     
     # Split jobs into older and newer halves (assuming sorted by postdate or just by index)
     # Actually dataset_manager preserves sequential index, but scraping appends to end.

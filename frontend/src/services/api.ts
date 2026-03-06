@@ -40,9 +40,16 @@ export async function getSkillGapApi(): Promise<any[]> {
   return toJson<any[]>(res);
 }
 
-export async function getSkillTrendsApi(): Promise<{ rising_skills: any[], declining_skills: any[] }> {
-  const res = await fetchWithAuth(`${API_BASE}/dashboard/skill-trends`);
+export async function getSkillTrendsApi(year?: number): Promise<{ rising_skills: any[], declining_skills: any[] }> {
+  const query = typeof year === 'number' ? `?year=${year}` : '';
+  const res = await fetchWithAuth(`${API_BASE}/dashboard/skill-trends${query}`);
   return toJson<{ rising_skills: any[], declining_skills: any[] }>(res);
+}
+
+export async function getSkillTrendYearsApi(): Promise<number[]> {
+  const res = await fetchWithAuth(`${API_BASE}/dashboard/skill-trend-years`);
+  const payload = await toJson<{ years: number[] }>(res);
+  return payload.years || [];
 }
 
 export async function getVulnerabilityApi(): Promise<any[]> {
@@ -123,6 +130,10 @@ export type WorkerProfileResponse = {
   skills: string[];
   risk_score: number | null;
   ai_vulnerability: number | null;
+  reskilling_path: {
+    target_role: string;
+    plan: string[];
+  } | null;
 }
 
 export async function getWorkerProfileApi(): Promise<WorkerProfileResponse> {

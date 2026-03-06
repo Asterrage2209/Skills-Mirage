@@ -66,6 +66,14 @@ def is_empty():
         return _courses_df is None or _courses_df.empty
 
 
+def get_course_count():
+    """Returns the number of courses in the dataset — used for startup threshold check."""
+    with _df_lock:
+        if _courses_df is None:
+            load_dataset()
+        return 0 if _courses_df is None else len(_courses_df)
+
+
 def save_dataset():
     """Synchronous save — for manual/backward-compatible calls."""
     with _df_lock:

@@ -5,11 +5,15 @@ from collections import Counter
 from fastapi import APIRouter
 from data.dataset_manager import get_all_jobs, get_latest_jobs
 from intelligence.hiring_trends import compute_hiring_trends
-from intelligence.skill_trends import compute_skill_trends
+from intelligence.skill_trends import compute_skill_trends, compute_skill_gap
 from intelligence.vulnerability_index import compute_vulnerability_index
 from scrapers.naukri.naukri_scraper import run_scraper
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+
+@router.get("/skill-gap")
+def skill_gap():
+    return compute_skill_gap()
 
 @router.get("/stats")
 def stats():

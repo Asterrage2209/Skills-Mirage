@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownRight, Zap } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
-import { getTopRoles, getSkillTrends } from '../../services/jobAnalytics';
+import { getSkillGapApiWrapper, getSkillTrends } from '../../services/jobAnalytics';
 
 // Helper function to format strings to Title Case for display
 const formatSkillName = (name: string) => {
@@ -16,7 +16,7 @@ const formatSkillName = (name: string) => {
 };
 
 const SkillsIntelligence = () => {
-    const [rolesData, setRolesData] = useState<any[]>([]);
+    const [gapData, setGapData] = useState<any[]>([]);
     const [risingData, setRisingData] = useState<any[]>([]);
     const [decliningData, setDecliningData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -25,16 +25,18 @@ const SkillsIntelligence = () => {
         let mounted = true;
         const loadData = async () => {
             try {
-                const roles = await getTopRoles();
+                const gaps = await getSkillGapApiWrapper();
                 const trends = await getSkillTrends();
 
                 if (mounted) {
-                    // Adapt roles to the gap format: mockSkillGaps had 'demand' and 'supply'
-                    const mappedRoles = roles.map(r => ({ name: formatSkillName(r.role), demand: r.count, supply: Math.round(r.count * (0.5 + Math.random() * 0.5)) }));
-
                     const formatTrends = (trendsList: any[]) => (trendsList || []).map(t => ({ ...t, name: formatSkillName(t.name) }));
 
-                    setRolesData(mappedRoles);
+                    const formattedGaps = gaps.map((g: any) => ({
+                        ...g,
+                        name: formatSkillName(g.skill)
+                    }));
+
+                    setGapData(formattedGaps);
                     setRisingData(formatTrends(trends.rising_skills));
                     setDecliningData(formatTrends(trends.declining_skills));
                     setLoading(false);
@@ -108,28 +110,38 @@ const SkillsIntelligence = () => {
             {/* Skill Gap Map */}
             <div className="card">
                 <div className="mb-6">
-                    <h3 className="text-lg font-bold text-white">Skill Gap Map</h3>
+                    <h3 className="text-lg font-bold text-white">Market Skill Gap Map</h3>
                     <p className="text-sm text-textSecondary">Comparing market demand against available training program outputs.</p>
                 </div>
 
-                <div className="h-[400px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={rolesData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                            <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                            <RechartsTooltip
-                                cursor={{ fill: '#ffffff05' }}
-                                contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
-                                itemStyle={{ color: '#e5e7eb' }}
-                            />
-                            <Bar dataKey="demand" name="Market Demand" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                            <Bar dataKey="supply" name="Training Supply" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                <div className="overflow-x-auto overflow-y-hidden custom-scrollbar pb-4 rounded-lg">
+                    <div className="h-[400px] min-w-[2000px] bg-secondary/30 rounded-lg p-4">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={gapData} margin={{ top: 20, right: 30, left: 20, bottom: 55 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                <XAxis
+                                    dataKey="name"
+                                    stroke="#9ca3af"
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    angle={-45}
+                                    textAnchor="end"
+                                />
+                                <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                                <RechartsTooltip
+                                    cursor={{ fill: '#ffffff05' }}
+                                    contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
+                                    itemStyle={{ color: '#e5e7eb' }}
+                                />
+                                <Bar dataKey="market_demand" name="Market Demand" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="training_supply" name="Training Supply" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
 
-                <div className="flex justify-center flex-wrap gap-4 mt-4">
+                <div className="flex justify-center flex-wrap gap-4 mt-6">
                     <div className="flex items-center gap-2 text-sm text-textSecondary">
                         <div className="w-3 h-3 rounded-full bg-blue-500"></div> Companies Demand
                     </div>

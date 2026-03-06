@@ -198,51 +198,46 @@ def _fetch_role_page(pool, role, city, page, max_pages, save_debug):
 # Parallel scrapers
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _scrape_city_parallel(pool, city, max_pages, save_debug):
+def _scrape_city_sequential(pool, city, max_pages, save_debug):
     """
-    Submit all pages for a city simultaneously to the thread pool.
-
-    Old sequential flow:   page1(5s) → page2(5s) → page3(5s) = 15 s
-    New parallel flow:     page1 ┐
-                           page2 ├─ all run at once ≈ 5 s total
-                           page3 ┘
+    Submit pages sequentially, enforcing a strict linear crawl:
+    page1(1.5s sleep) → page2(1.5s sleep) → page3(1.5s sleep)...
     """
     jobs = []
     failed_pages = 0
     empty_pages = 0
 
-    with ThreadPoolExecutor(max_workers=DRIVER_POOL_SIZE) as executor:
-        futures = {
-            executor.submit(_fetch_city_page, pool, city, p, max_pages, save_debug): p
-            for p in range(1, max_pages + 1)
-        }
+    for page in range(1, max_pages + 1):
+        logger.info(f"Scraping page {page} of {max_pages}...")
+        
+        try:
+            result = _fetch_city_page(pool, city, page, max_pages, save_debug)
+        except Exception:
+            logger.exception("City page fetch raised an exception")
+            failed_pages += 1
+            time.sleep(1.5)
+            continue
 
-        for future in as_completed(futures):
-            try:
-                result = future.result()
-            except Exception:
-                logger.exception("City page future raised")
-                failed_pages += 1
-                continue
+        if result["failed"]:
+            failed_pages += 1
+        
+        if not result["cards"]:
+            empty_pages += 1
+            logger.warning("No cards — tried=%s", result["candidates"])
+            # Even if empty, pause before hitting the next page
+            time.sleep(1.5)
+            continue
 
-            if result["failed"]:
-                failed_pages += 1
-            if not result["cards"]:
-                empty_pages += 1
-                logger.warning("No cards — tried=%s", result["candidates"])
-                continue
+        for job in result["cards"]:
+            jobs.append(_enrich(job, "all_roles", city))
+            
+        logger.info(f"Collected {len(jobs)} jobs so far")
 
-            for job in result["cards"]:
-                jobs.append(_enrich(job, "all_roles", city))
-                if len(jobs) >= SCRAPER_JOB_LIMIT:
-                    # Cancel futures still pending
-                    for f in futures:
-                        f.cancel()
-                    break
+        # Always sleep between sequential fetches to avoid blocking
+        if page < max_pages:
+            time.sleep(1.5)
 
-            logger.info("Accumulated: %s jobs", len(jobs))
-            if len(jobs) >= SCRAPER_JOB_LIMIT:
-                break
+    logger.info(f"Scraping complete. {len(jobs)} jobs added.")
 
     return {
         "jobs": jobs,
@@ -254,10 +249,9 @@ def _scrape_city_parallel(pool, city, max_pages, save_debug):
     }
 
 
-def _scrape_role_city_matrix(pool, roles, cities, max_pages, save_debug):
+def _scrape_role_city_matrix_sequential(pool, roles, cities, max_pages, save_debug):
     """
-    Fallback: scrape every (role, city, page) combination in parallel.
-    All tasks are submitted at once; the pool caps actual concurrency.
+    Fallback: scrape every (role, city, page) combination sequentially.
     """
     jobs = []
     failed_pages = 0
@@ -270,37 +264,34 @@ def _scrape_role_city_matrix(pool, roles, cities, max_pages, save_debug):
         for page in range(1, max_pages + 1)
     ]
 
-    with ThreadPoolExecutor(max_workers=DRIVER_POOL_SIZE) as executor:
-        futures = {
-            executor.submit(_fetch_role_page, pool, role, city, page, max_pages, save_debug): (role, city, page)
-            for role, city, page in tasks
-        }
+    for idx, (role, city, page) in enumerate(tasks):
+        logger.info(f"Scraping matrix page {page} of {max_pages} (Role: {role}, City: {city})...")
 
-        for future in as_completed(futures):
-            try:
-                result = future.result()
-            except Exception:
-                logger.exception("Role page future raised")
-                failed_pages += 1
-                continue
+        try:
+            result = _fetch_role_page(pool, role, city, page, max_pages, save_debug)
+        except Exception:
+            logger.exception("Role page fetch raised an exception")
+            failed_pages += 1
+            time.sleep(1.5)
+            continue
 
-            if result["failed"]:
-                failed_pages += 1
-                continue
-            if not result["cards"]:
-                empty_pages += 1
-                continue
+        if result["failed"]:
+            failed_pages += 1
+        
+        if not result["cards"]:
+            empty_pages += 1
 
+        if result["cards"]:
             for job in result["cards"]:
                 jobs.append(_enrich(job, result["role"], result["city"]))
-                if len(jobs) >= SCRAPER_JOB_LIMIT:
-                    for f in futures:
-                        f.cancel()
-                    break
+                
+        logger.info(f"Collected {len(jobs)} jobs so far")
 
-            logger.info("Accumulated: %s jobs", len(jobs))
-            if len(jobs) >= SCRAPER_JOB_LIMIT:
-                break
+        # Always sleep between sequential fetches to avoid blocking
+        if idx < len(tasks) - 1:
+            time.sleep(1.5)
+
+    logger.info(f"Matrix scraping complete. {len(jobs)} jobs added.")
 
     return {
         "jobs": jobs,
@@ -359,21 +350,19 @@ def run_scraper():
 
             for city in selected_cities:
                 logger.info("City-wide scrape: city=%s", city)
-                r = _scrape_city_parallel(driver_pool, city, max_pages, save_debug)
+                r = _scrape_city_sequential(driver_pool, city, max_pages, save_debug)
                 jobs.extend(r["jobs"])
                 for k in stats:
                     stats[k] += r.get(k, 0)
-                if len(jobs) >= SCRAPER_JOB_LIMIT:
-                    break
 
             if len(jobs) == 0:
                 logger.warning("City-wide scrape returned 0 jobs — falling back to role-city matrix")
-                r = _scrape_role_city_matrix(driver_pool, roles, selected_cities, max_pages, save_debug)
+                r = _scrape_role_city_matrix_sequential(driver_pool, roles, selected_cities, max_pages, save_debug)
                 jobs.extend(r["jobs"])
                 for k in stats:
                     stats[k] += r.get(k, 0)
         else:
-            r = _scrape_role_city_matrix(driver_pool, roles, cities, max_pages, save_debug)
+            r = _scrape_role_city_matrix_sequential(driver_pool, roles, cities, max_pages, save_debug)
             jobs.extend(r["jobs"])
             for k in stats:
                 stats[k] += r.get(k, 0)

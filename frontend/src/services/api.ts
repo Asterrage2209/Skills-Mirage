@@ -26,6 +26,11 @@ export async function getHiringTrendsApi(): Promise<any[]> {
   return toJson<any[]>(res);
 }
 
+export async function getSkillGapApi(): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/dashboard/skill-gap`);
+  return toJson<any[]>(res);
+}
+
 export async function getSkillTrendsApi(): Promise<{ rising_skills: any[], declining_skills: any[] }> {
   const res = await fetch(`${API_BASE}/dashboard/skill-trends`);
   return toJson<{ rising_skills: any[], declining_skills: any[] }>(res);

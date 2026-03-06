@@ -9,7 +9,8 @@ import {
   getIndustryDistributionApi,
   getTopRolesApi,
   getRoleDistributionApi,
-  getCitySpreadApi
+  getCitySpreadApi,
+  getSkillGapApi
 } from './api';
 
 
@@ -50,9 +51,13 @@ export const getSkillTrends = async () => {
   return await getSkillTrendsApi();
 };
 
+export const getSkillGapApiWrapper = async () => {
+  return await getSkillGapApi();
+};
+
 export const getVulnerabilityRows = async () => {
   const vulnerability = await getVulnerabilityApi();
-  return Object.entries(vulnerability)
+  return Object.entries(vulnerability.role_risks || {})
     .map(([role, score]) => ({
       role,
       city: 'Various',
@@ -61,6 +66,16 @@ export const getVulnerabilityRows = async () => {
       hiring: Number(score) >= 60 ? '-declining' : '+stable',
     }))
     .sort((a, b) => b.score - a.score);
+};
+
+export const getVulnerabilityRegions = async () => {
+  const vulnerability = await getVulnerabilityApi();
+  return Object.entries(vulnerability.region_risks || {})
+    .map(([city, score]) => ({
+      name: city,
+      risk: Number(score)
+    }))
+    .sort((a, b) => b.risk - a.risk);
 };
 
 export const getLatestJobs = async () => {

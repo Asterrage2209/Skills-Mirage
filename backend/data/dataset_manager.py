@@ -9,6 +9,7 @@ logger = logging.getLogger(__name__)
 DATASET_PATH = Path(__file__).resolve().parents[2] / "dataset" / "naukri_jobs.csv"
 
 _jobs_df = None
+_courses_df = None
 
 # RLock lets the same thread re-acquire (e.g. load_dataset called inside append_jobs)
 _df_lock = threading.RLock()
@@ -40,6 +41,23 @@ def load_dataset():
         _jobs_df = pd.DataFrame(columns=_SCHEMA_COLS)
 
 
+def load_courses_dataset():
+    global _courses_df
+    COURSES_PATH = DATASET_PATH.parent / "courses.csv"
+    if not COURSES_PATH.exists():
+        logger.warning(f"Courses dataset not found at {COURSES_PATH}.")
+        _courses_df = pd.DataFrame()
+        return
+
+    try:
+        _courses_df = pd.read_csv(COURSES_PATH, dtype=str)
+        _courses_df = _courses_df.fillna("")
+        logger.info(f"Loaded {len(_courses_df)} courses from dataset.")
+    except Exception as e:
+        logger.error(f"Failed to load courses dataset: {e}")
+        _courses_df = pd.DataFrame()
+
+
 def _parse_skills(s):
     s = str(s)
     if s.startswith("[") and s.endswith("]"):
@@ -66,6 +84,21 @@ def get_all_jobs():
         desc = str(row.get("jobdescription", "")).lower()
         row["ai_mentions"] = [w for w in _AI_KEYWORDS if w in desc]
 
+    return records
+
+
+def get_all_courses():
+    global _courses_df
+    # Always reload to ensure newest courses file state
+    load_courses_dataset()
+    if _courses_df is None or _courses_df.empty:
+        return []
+
+    records = _courses_df.to_dict("records")
+    for row in records:
+        tags_str = str(row.get("skill_tags", ""))
+        row["skill_tags"] = [s.strip().lower() for s in tags_str.split(",") if s.strip()]
+        
     return records
 
 
@@ -133,7 +166,7 @@ def _save_async(snapshot):
             tmp = DATASET_PATH.with_suffix(".tmp.csv")
             snapshot.to_csv(tmp, index=False)
             tmp.replace(DATASET_PATH)
-            logger.info("Saved dataset to %s (%s rows)", DATASET_PATH, len(snapshot))
+            logger.info("Dataset updated: Saved to %s (%s rows)", DATASET_PATH, len(snapshot))
         except Exception as e:
             logger.error("Failed to save dataset: %s", e)
 
@@ -179,3 +212,4 @@ def save_dataset():
 
 
 load_dataset()
+load_courses_dataset()

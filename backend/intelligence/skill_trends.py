@@ -1,5 +1,5 @@
 from collections import Counter
-from data.dataset_manager import get_all_jobs
+from data.dataset_manager import get_all_jobs, get_all_courses
 
 def compute_skill_trends():
     jobs = get_all_jobs()
@@ -36,3 +36,33 @@ def compute_skill_trends():
         "declining_skills": declining
     }
 
+def compute_skill_gap():
+    jobs = get_all_jobs()
+    courses = get_all_courses()
+    
+    job_skill_count = Counter()
+    for job in jobs:
+        for sk in job.get("skills", []):
+            job_skill_count[sk.lower()] += 1
+            
+    course_skill_count = Counter()
+    for course in courses:
+        for tag in course.get("skill_tags", []):
+            course_skill_count[tag.lower()] += 1
+            
+    gap_metrics = []
+    
+    for skill, demand in job_skill_count.items():
+        supply = course_skill_count.get(skill, 0)
+        gap = demand - supply
+        gap_metrics.append({
+            "skill": skill,
+            "market_demand": demand,
+            "training_supply": supply,
+            "gap": gap
+        })
+        
+    # Sort strictly by market demand representing true opportunity targets
+    gap_metrics = sorted(gap_metrics, key=lambda x: x["market_demand"], reverse=True)
+    
+    return gap_metrics[:100]

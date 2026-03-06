@@ -1,26 +1,31 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 import { Activity, ArrowRight, Lock, Mail, UserSquare } from 'lucide-react';
+import { signupApi } from '../../services/api';
 
 const Register = () => {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { login } = useAuth();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setSuccess('');
         setLoading(true);
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            login('mock-jwt-token-register', { name: name || 'Demo User', email });
-            navigate('/dashboard');
+            await signupApi({
+                email,
+                name,
+                password
+            });
+            setSuccess('Account created successfully');
+            setTimeout(() => navigate('/login'), 1500);
         } catch (err: any) {
             setError(err.message || 'Failed to register');
             setLoading(false);
@@ -45,8 +50,9 @@ const Register = () => {
                 <form onSubmit={handleSubmit} className="card">
                     <div className="card-glow" />
                     {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg mb-6 text-sm">{error}</div>}
+                    {success && <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-lg mb-6 text-sm">{success}</div>}
 
-                    <div className="space-y-4 relative z-10">
+                    <div className="space-y-4 relative z-10 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                         <div>
                             <label className="block text-sm font-medium text-textSecondary mb-1">Full Name</label>
                             <div className="relative">
@@ -56,7 +62,7 @@ const Register = () => {
                                     required
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
-                                    className="input-field pl-10"
+                                    className="input-field pl-10 w-full bg-secondary/50 border border-white/10 rounded-lg p-2.5 text-white"
                                     placeholder="John Doe"
                                 />
                             </div>
@@ -71,7 +77,7 @@ const Register = () => {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="input-field pl-10"
+                                    className="input-field pl-10 w-full bg-secondary/50 border border-white/10 rounded-lg p-2.5 text-white"
                                     placeholder="john@example.com"
                                 />
                             </div>
@@ -86,7 +92,7 @@ const Register = () => {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="input-field pl-10"
+                                    className="input-field pl-10 w-full bg-secondary/50 border border-white/10 rounded-lg p-2.5 text-white"
                                     placeholder="••••••••"
                                 />
                             </div>

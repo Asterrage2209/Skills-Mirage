@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { User, Briefcase, MapPin, Search } from 'lucide-react';
-import { analyzeWorkerApi, WorkerAnalyzeResponse } from '../../services/api';
+import { useState, useEffect } from 'react';
+import { User, Briefcase, MapPin, Search, Layers } from 'lucide-react';
+import { analyzeWorkerApi, getWorkerProfileApi, WorkerAnalyzeResponse } from '../../services/api';
 
 type FormState = {
   title: string;
   city: string;
   experience: string;
   description: string;
+  skills: string;
 };
 
 const WorkerIntelligence = () => {
@@ -15,11 +16,34 @@ const WorkerIntelligence = () => {
     city: '',
     experience: '',
     description: '',
+    skills: ''
   });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [results, setResults] = useState<WorkerAnalyzeResponse | null>(null);
+
+  // Auto-fill form data from Backend
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const profile = await getWorkerProfileApi();
+        setFormState(prev => ({
+          ...prev,
+          title: profile.job_role || '',
+          city: profile.city || '',
+          experience: profile.years_of_experience?.toString() || '',
+          description: profile.role_description || '',
+          skills: profile.skills ? profile.skills.join(', ') : ''
+        }));
+
+        // Optionally fetch an implicit calculation if risk_score exists? (Ignored per prompt requirements)
+      } catch (err) {
+        // Silent catch unless it's a critical unauthenticated fault
+      }
+    }
+    loadProfile();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,10 +52,11 @@ const WorkerIntelligence = () => {
 
     try {
       const res = await analyzeWorkerApi({
-        job_title: formState.title,
+        job_role: formState.title,
         city: formState.city,
-        experience_years: Number(formState.experience || 0),
-        writeup: formState.description,
+        years_of_experience: Number(formState.experience || 0),
+        role_description: formState.description,
+        skills: formState.skills ? formState.skills.split(',').map(s => s.trim()).filter(Boolean) : []
       });
       setResults(res);
     } catch (err) {
@@ -108,6 +133,20 @@ const WorkerIntelligence = () => {
                 value={formState.description}
                 onChange={(e) => setFormState({ ...formState, description: e.target.value })}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-textSecondary mb-1">Known Skills (Comma Separated)</label>
+              <div className="relative">
+                <Layers className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-textSecondary" />
+                <input
+                  type="text"
+                  className="input-field pl-9"
+                  placeholder="Python, React, AWS..."
+                  value={formState.skills}
+                  onChange={(e) => setFormState({ ...formState, skills: e.target.value })}
+                />
+              </div>
             </div>
 
             {error ? <p className="text-sm text-red-400">{error}</p> : null}

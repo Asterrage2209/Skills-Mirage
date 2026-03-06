@@ -24,6 +24,30 @@
     "query_city": "india"
   },
   {
+    "jobtitle": "Sales Manager- Bangalore Based",
+    "company": "Marriott",
+    "joblocation_address": "Kolkata, Mumbai, New Delhi, Hyderabad, Pune, Chennai, Bengaluru",
+    "experience": "1-6 Yrs",
+    "skills": [
+      "Product quality",
+      "Business administration",
+      "Sales",
+      "Event management",
+      "Service excellence",
+      "Customer service",
+      "Customer experience",
+      "Operations"
+    ],
+    "job_url": "https://www.naukri.com/job-listings-sales-manager-bangalore-based-marriott-kolkata-mumbai-new-delhi-hyderabad-pune-chennai-bengaluru-1-to-6-years-060326504365",
+    "jobdescription": "CANDIDATE PROFILE . Education and Experience . 2-year degree from an accredited univers...",
+    "title": "Sales Manager- Bangalore Based",
+    "location": "Kolkata, Mumbai, New Delhi, Hyderabad, Pune, Chennai, Bengaluru",
+    "description": "CANDIDATE PROFILE . Education and Experience . 2-year degree from an accredited univers...",
+    "ai_mentions": [],
+    "query_role": "all_roles",
+    "query_city": "india"
+  },
+  {
     "jobtitle": "Assistant Manager | Direct Tax (EXPAT Tax) |Mumbai, Bangalore, Chennai",
     "company": "Deloitte Consulting",
     "joblocation_address": "Chennai, Bengaluru, Mumbai (All Areas)",
@@ -43,30 +67,6 @@
     "title": "Assistant Manager | Direct Tax (EXPAT Tax) |Mumbai, Bangalore, Chennai",
     "location": "Chennai, Bengaluru, Mumbai (All Areas)",
     "description": "Your potential, unleashed.Indias impact on the global economy has increased at an expo...",
-    "ai_mentions": [],
-    "query_role": "all_roles",
-    "query_city": "india"
-  },
-  {
-    "jobtitle": ".NET Software Developer",
-    "company": "Tata Consultancy Services",
-    "joblocation_address": "Mumbai, Gurugram, Bengaluru",
-    "experience": "6-8 Yrs",
-    "skills": [
-      "React.Js",
-      "Javascript And Jquery",
-      ".Net core & core with cloud",
-      "Postgresql",
-      "Agile",
-      "MongoDB",
-      "Development",
-      "Javascript"
-    ],
-    "job_url": "https://www.naukri.com/job-listings-net-software-developer-tata-consultancy-services-mumbai-gurugram-bengaluru-6-to-8-years-030326013742",
-    "jobdescription": "Experience with PostgreSQL and MongoDB (or similar non-SQL environments). Experience as...",
-    "title": ".NET Software Developer",
-    "location": "Mumbai, Gurugram, Bengaluru",
-    "description": "Experience with PostgreSQL and MongoDB (or similar non-SQL environments). Experience as...",
     "ai_mentions": [],
     "query_role": "all_roles",
     "query_city": "india"
@@ -254,30 +254,6 @@
     "query_city": "india"
   },
   {
-    "jobtitle": "Java Full Stack Developer",
-    "company": "Capgemini",
-    "joblocation_address": "Hybrid - Bangalore Rural, Gurugram, Mumbai (All Areas)",
-    "experience": "6-11 Yrs",
-    "skills": [
-      "Fullstack Development",
-      "React.Js",
-      "Microservices",
-      "Spring Boot",
-      "Full Stack",
-      "Bootstrap",
-      "Boot",
-      "Stack"
-    ],
-    "job_url": "https://www.naukri.com/job-listings-java-full-stack-developer-capgemini-bangalore-rural-gurugram-mumbai-all-areas-6-to-11-years-060326012475",
-    "jobdescription": "Required Skills . Backend Skills Cloud platforms (AWS / Azure / GCP preferred)",
-    "title": "Java Full Stack Developer",
-    "location": "Hybrid - Bangalore Rural, Gurugram, Mumbai (All Areas)",
-    "description": "Required Skills . Backend Skills Cloud platforms (AWS / Azure / GCP preferred)",
-    "ai_mentions": [],
-    "query_role": "all_roles",
-    "query_city": "india"
-  },
-  {
     "jobtitle": "Manual Testing Engineer - SAP",
     "company": "Capgemini",
     "joblocation_address": "Mumbai, Pune, Bengaluru",
@@ -345,6 +321,30 @@
     "title": "Sr AWS Data Engineer",
     "location": "Kolkata, Mumbai, New Delhi, Hyderabad, Pune, Chennai, Bengaluru",
     "description": "Awarded with Consultancy of the year in the British Bank Award and has been ranked Top ...",
+    "ai_mentions": [],
+    "query_role": "all_roles",
+    "query_city": "india"
+  },
+  {
+    "jobtitle": "Opportunity For Data Engineering professionals",
+    "company": "Atos",
+    "joblocation_address": "Pune, Chennai, Mumbai (All Areas)",
+    "experience": "6-10 Yrs",
+    "skills": [
+      "Azure Data Factory",
+      "Data Engineer",
+      "Python",
+      "Pyspark",
+      "Databricks",
+      "SQL",
+      "Engineering",
+      "Factory"
+    ],
+    "job_url": "https://www.naukri.com/job-listings-opportunity-for-data-engineering-professionals-atos-pune-chennai-mumbai-all-areas-6-to-10-years-060326032178",
+    "jobdescription": "Experience in Data EngineeringHands-on experience with Azure Data Factory (ADF) for ETL...",
+    "title": "Opportunity For Data Engineering professionals",
+    "location": "Pune, Chennai, Mumbai (All Areas)",
+    "description": "Experience in Data EngineeringHands-on experience with Azure Data Factory (ADF) for ETL...",
     "ai_mentions": [],
     "query_role": "all_roles",
     "query_city": "india"
@@ -466,25 +466,25 @@
     "query_city": "india"
   },
   {
-    "jobtitle": "S&C Global Network - AI - Public Services- Analyst",
-    "company": "Accenture",
-    "joblocation_address": "Mumbai",
-    "experience": "2-5 Yrs",
+    "jobtitle": ".NET Software Developer",
+    "company": "Tata Consultancy Services",
+    "joblocation_address": "Mumbai, Gurugram, Bengaluru",
+    "experience": "6-8 Yrs",
     "skills": [
-      "ai",
-      "python",
-      "c",
-      "data management",
-      "power bi",
-      "numpy",
-      "machine learning",
-      "artificial intelligence"
+      "React.Js",
+      "Javascript And Jquery",
+      ".Net core & core with cloud",
+      "Postgresql",
+      "Agile",
+      "MongoDB",
+      "Development",
+      "Javascript"
     ],
-    "job_url": "https://www.naukri.com/job-listings-s-c-global-network-ai-public-services-analyst-accenture-solutions-pvt-ltd-mumbai-2-to-5-years-050326922618",
-    "jobdescription": "About The Role  Job Title: Junior Data Scientist / AI Engineer (Entry-Level) for Public...",
-    "title": "S&C Global Network - AI - Public Services- Analyst",
-    "location": "Mumbai",
-    "description": "About The Role  Job Title: Junior Data Scientist / AI Engineer (Entry-Level) for Public...",
+    "job_url": "https://www.naukri.com/job-listings-net-software-developer-tata-consultancy-services-mumbai-gurugram-bengaluru-6-to-8-years-030326013742",
+    "jobdescription": "Experience with PostgreSQL and MongoDB (or similar non-SQL environments). Experience as...",
+    "title": ".NET Software Developer",
+    "location": "Mumbai, Gurugram, Bengaluru",
+    "description": "Experience with PostgreSQL and MongoDB (or similar non-SQL environments). Experience as...",
     "ai_mentions": [],
     "query_role": "all_roles",
     "query_city": "india"
@@ -773,6 +773,30 @@
     "query_city": "india"
   },
   {
+    "jobtitle": "Java Full Stack Developer",
+    "company": "Capgemini",
+    "joblocation_address": "Hybrid - Bangalore Rural, Gurugram, Mumbai (All Areas)",
+    "experience": "6-11 Yrs",
+    "skills": [
+      "Fullstack Development",
+      "React.Js",
+      "Microservices",
+      "Spring Boot",
+      "Full Stack",
+      "Bootstrap",
+      "Boot",
+      "Stack"
+    ],
+    "job_url": "https://www.naukri.com/job-listings-java-full-stack-developer-capgemini-bangalore-rural-gurugram-mumbai-all-areas-6-to-11-years-060326012475",
+    "jobdescription": "Required Skills . Backend Skills Cloud platforms (AWS / Azure / GCP preferred)",
+    "title": "Java Full Stack Developer",
+    "location": "Hybrid - Bangalore Rural, Gurugram, Mumbai (All Areas)",
+    "description": "Required Skills . Backend Skills Cloud platforms (AWS / Azure / GCP preferred)",
+    "ai_mentions": [],
+    "query_role": "all_roles",
+    "query_city": "india"
+  },
+  {
     "jobtitle": "Corporate Actions & Income Analyst NCT",
     "company": "Deutsche Bank",
     "joblocation_address": "Mumbai",
@@ -909,32 +933,6 @@
     "location": "Hyderabad, Bengaluru, Mumbai (All Areas)",
     "description": "SAP Certification in preferred Must have at least 1-2 Implementation on S4 Hana version...",
     "ai_mentions": [],
-    "query_role": "all_roles",
-    "query_city": "india"
-  },
-  {
-    "jobtitle": "S&C Global Network - AI - FS Banking & Capital-Consultant",
-    "company": "Accenture",
-    "joblocation_address": "Mumbai",
-    "experience": "3-8 Yrs",
-    "skills": [
-      "ai",
-      "kubernetes",
-      "python",
-      "c",
-      "data analysis",
-      "batch processing",
-      "machine learning",
-      "banking"
-    ],
-    "job_url": "https://www.naukri.com/job-listings-s-c-global-network-ai-fs-banking-capital-consultant-accenture-solutions-pvt-ltd-mumbai-3-to-8-years-050326922652",
-    "jobdescription": "Experience :Minimum 3+ years of experience in Data Science, Machine Learning, or relate...",
-    "title": "S&C Global Network - AI - FS Banking & Capital-Consultant",
-    "location": "Mumbai",
-    "description": "Experience :Minimum 3+ years of experience in Data Science, Machine Learning, or relate...",
-    "ai_mentions": [
-      "machine learning"
-    ],
     "query_role": "all_roles",
     "query_city": "india"
   }

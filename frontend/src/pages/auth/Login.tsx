@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Activity, ArrowRight, Lock, Mail } from 'lucide-react';
+import { loginApi } from '../../services/api';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -17,12 +18,10 @@ const Login = () => {
         setLoading(true);
 
         try {
-            // Mock login for Hackathon without actual backend ping if backend is not started/connected
-            // Wait 1s
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            const data = await loginApi({ email, password });
 
-            // Simulate real auth context using dummy data to satisfy demo
-            login('mock-jwt-token-12345', { name: 'Demo User', email });
+            // Generate standard JWT localStorage scopes matching auth hooks natively
+            login(data.access_token, { name: email.split('@')[0], email });
             navigate('/dashboard');
         } catch (err: any) {
             setError(err.message || 'Failed to login');
@@ -60,7 +59,7 @@ const Login = () => {
                                     required
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    className="input-field pl-10"
+                                    className="input-field pl-10 w-full bg-secondary/50 border border-white/10 rounded-lg p-2.5 text-white"
                                     placeholder="admin@skillsmirage.com"
                                 />
                             </div>
@@ -75,7 +74,7 @@ const Login = () => {
                                     required
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    className="input-field pl-10"
+                                    className="input-field pl-10 w-full bg-secondary/50 border border-white/10 rounded-lg p-2.5 text-white"
                                     placeholder="••••••••"
                                 />
                             </div>

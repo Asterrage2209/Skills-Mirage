@@ -16,20 +16,18 @@ def init_db():
     os.makedirs(DB_PATH.parent, exist_ok=True)
     conn = sqlite3.connect(DB_PATH)
     
-    # Load courses from JSON
-    courses_json_path = DATA_DIR / "courses_raw.json"
-    if courses_json_path.exists():
+    # Load courses from CSV
+    courses_csv_path = DATASET_DIR / "courses.csv"
+    if courses_csv_path.exists():
         try:
-            with open(courses_json_path, 'r', encoding='utf-8') as f:
-                courses_data = json.load(f)
-            if courses_data:
-                courses_df = pd.DataFrame(courses_data)
-                courses_df.to_sql('courses', conn, if_exists='replace', index=False)
-                print(f"Loaded {len(courses_df)} courses into 'courses' table.")
+            courses_df = pd.read_csv(courses_csv_path)
+            courses_df.columns = [c.strip().lower().replace(" ", "_").replace("-", "_") for c in courses_df.columns]
+            courses_df.to_sql('courses', conn, if_exists='replace', index=False)
+            print(f"Loaded {len(courses_df)} courses into 'courses' table.")
         except Exception as e:
-            print(f"Error loading courses.json: {e}")
+            print(f"Error loading courses.csv: {e}")
     else:
-        print(f"File not found: {courses_json_path}")
+        print(f"File not found: {courses_csv_path}")
 
     # Load jobs from CSV
     jobs_csv_path = DATASET_DIR / "naukri_jobs.csv"

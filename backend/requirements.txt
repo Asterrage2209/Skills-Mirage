@@ -11,3 +11,8 @@ numpy
 pandas
 scikit-learn
 apscheduler==3.10.4
+pymongo[srv]
+passlib[bcrypt]
+bcrypt==4.0.1
+python-jose
+email-validator

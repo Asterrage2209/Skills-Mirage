@@ -3,11 +3,11 @@ from contextlib import asynccontextmanager
 
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s"
+    format="%(asctime)s | %(levelname)s | %(message)s"
 )
 
 from apscheduler.schedulers.background import BackgroundScheduler
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from api import dashboard_routes, worker_routes, chatbot_routes
@@ -60,13 +60,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logging.info(f"API Request: {request.method} {request.url}")
+    response = await call_next(request)
+    return response
+
 # ── Routers ───────────────────────────────────────────────────────────────────
+from api import auth_routes                                                # ← new
+
 app.include_router(dashboard_routes.router)
 app.include_router(worker_routes.router)
 app.include_router(chatbot_routes.router)
 app.include_router(courses_router)          # ← new
+app.include_router(auth_routes.router)      # ← new
 
 
 @app.get("/")
 def root():
     return {"message": "Skills Mirage Backend Running"}
+

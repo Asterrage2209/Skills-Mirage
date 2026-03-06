@@ -45,9 +45,14 @@ export async function getSkillTrendsApi(): Promise<{ rising_skills: any[], decli
   return toJson<{ rising_skills: any[], declining_skills: any[] }>(res);
 }
 
-export async function getVulnerabilityApi(): Promise<Record<string, number>> {
+export async function getVulnerabilityApi(): Promise<any[]> {
   const res = await fetchWithAuth(`${API_BASE}/dashboard/vulnerability`);
-  return toJson<Record<string, number>>(res);
+  return toJson<any[]>(res);
+}
+
+export async function getVulnerabilityRegionsApi(): Promise<any> {
+  const res = await fetchWithAuth(`${API_BASE}/dashboard/vulnerability-regions`);
+  return toJson<any>(res);
 }
 
 export async function getDashboardStatsApi(): Promise<{ total_jobs: number, top_city: string, most_in_demand_skill: string, most_common_role: string }> {
@@ -117,6 +122,7 @@ export type WorkerProfileResponse = {
   role_description: string | null;
   skills: string[];
   risk_score: number | null;
+  ai_vulnerability: number | null;
 }
 
 export async function getWorkerProfileApi(): Promise<WorkerProfileResponse> {
@@ -132,6 +138,7 @@ export type WorkerAnalyzeResponse = {
     skills: string[];
   };
   risk_score: number;
+  ai_vulnerability: number;
   reskilling_path: {
     target_role: string;
     plan: string[];

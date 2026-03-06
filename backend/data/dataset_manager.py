@@ -36,6 +36,14 @@ def load_dataset():
     try:
         _jobs_df = pd.read_csv(DATASET_PATH, dtype=str).fillna("")
         logger.info("Loaded %s jobs from dataset.", len(_jobs_df))
+        
+        # Diagnostics
+        if not _jobs_df.empty:
+            logger.info(f"Dataset sample roles: {_jobs_df['jobtitle'].head(3).tolist()}")
+            loc_col = 'joblocation_address' if 'joblocation_address' in _jobs_df.columns else ('location' if 'location' in _jobs_df.columns else 'city')
+            if loc_col in _jobs_df.columns:
+                logger.info(f"Dataset sample cities: {_jobs_df[loc_col].head(3).tolist()}")
+
     except Exception as e:
         logger.error("Failed to load dataset: %s", e)
         _jobs_df = pd.DataFrame(columns=_SCHEMA_COLS)

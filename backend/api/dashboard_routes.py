@@ -8,6 +8,8 @@ from intelligence.hiring_trends import compute_hiring_trends
 from intelligence.skill_trends import compute_skill_trends, compute_skill_gap
 from intelligence.vulnerability_index import compute_vulnerability_index
 from scrapers.naukri.naukri_scraper import run_scraper
+from db.mongo import users_collection
+import logging
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -51,6 +53,56 @@ def skill_trends():
 
 @router.get("/vulnerability")
 def vulnerability():
+    jobs = get_all_jobs()
+    vuln_data = compute_vulnerability_index()
+    role_risks = vuln_data.get("role_risks", {})
+    
+    unique_roles = {}
+    for job in jobs:
+        role = str(job.get("title", "")).strip().lower()
+        city = str(job.get("city", "Unknown")).strip()
+        if not role:
+            continue
+        
+        key = (role, city)
+        if key not in unique_roles:
+            score = role_risks.get(role, 0)
+            unique_roles[key] = {
+                "job_role": role.title(),
+                "city": city.title(),
+                "ai_risk_score": round(score)
+            }
+                
+    logging.info(f"Unique roles generated: {len(unique_roles)}")
+    logging.info(f"Example rows: {list(unique_roles.values())[:5]}")
+
+    results = list(unique_roles.values())
+    results.sort(key=lambda x: x["ai_risk_score"], reverse=True)
+    results = results[:100] # Limit to 100 to avoid massive payloads
+
+    # Group vulnerability data by city
+    city_risks = {}
+    for row in results:
+        city = row["city"]
+        score = row["ai_risk_score"]
+        if city not in city_risks:
+            city_risks[city] = []
+        city_risks[city].append(score)
+
+    region_scores = {
+        city: sum(scores)/len(scores)
+        for city, scores in city_risks.items()
+    }
+
+    logging.info(f"Returning vulnerability results count: {len(results)}")
+    
+    return {
+        "table": results,
+        "regions": region_scores
+    }
+
+@router.get("/vulnerability-regions")
+def vulnerability_regions():
     return compute_vulnerability_index()
 
 @router.get("/latest-jobs")

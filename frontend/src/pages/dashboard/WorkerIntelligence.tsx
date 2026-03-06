@@ -22,6 +22,8 @@ const WorkerIntelligence = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [results, setResults] = useState<WorkerAnalyzeResponse | null>(null);
+  const [riskScore, setRiskScore] = useState<number | null>(null);
+  const [aiVulnerability, setAiVulnerability] = useState<number | null>(null);
 
   // Auto-fill form data from Backend
   useEffect(() => {
@@ -37,6 +39,12 @@ const WorkerIntelligence = () => {
           skills: profile.skills ? profile.skills.join(', ') : ''
         }));
 
+        if (profile.risk_score !== null && profile.risk_score !== undefined) {
+          setRiskScore(profile.risk_score);
+        }
+        if (profile.ai_vulnerability !== null && profile.ai_vulnerability !== undefined) {
+          setAiVulnerability(profile.ai_vulnerability);
+        }
         // Optionally fetch an implicit calculation if risk_score exists? (Ignored per prompt requirements)
       } catch (err) {
         // Silent catch unless it's a critical unauthenticated fault
@@ -51,6 +59,8 @@ const WorkerIntelligence = () => {
     setError('');
 
     try {
+      console.log("Submitting worker profile", formState);
+
       const res = await analyzeWorkerApi({
         job_role: formState.title,
         city: formState.city,
@@ -59,6 +69,8 @@ const WorkerIntelligence = () => {
         skills: formState.skills ? formState.skills.split(',').map(s => s.trim()).filter(Boolean) : []
       });
       setResults(res);
+      setRiskScore(res.risk_score);
+      setAiVulnerability(res.ai_vulnerability);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze worker profile');
     } finally {
@@ -158,35 +170,46 @@ const WorkerIntelligence = () => {
         </div>
 
         <div className="space-y-6">
-          {results ? (
+          {(results || riskScore !== null) ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
               <div className="card border-red-500/30 bg-gradient-to-b from-card to-red-500/5">
+                <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
+                  <h3 className="text-lg font-bold text-white">AI Vulnerability Index</h3>
+                  <div className="text-3xl font-black text-orange-400">
+                    {Math.round(aiVulnerability ?? (results?.ai_vulnerability || 0))}
+                  </div>
+                </div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">AI Risk Score</h3>
-                  <div className="text-3xl font-black text-red-500">
-                    {Math.round(results.risk_score)}
+                  <h3 className="text-sm font-bold text-textSecondary">Risk Score</h3>
+                  <div className="text-xl font-bold text-red-500">
+                    {Math.round(riskScore ?? (results?.risk_score || 0))}
                     <span className="text-sm text-textSecondary font-normal">/100</span>
                   </div>
                 </div>
-                <p className="text-textSecondary text-sm leading-relaxed mb-4">
-                  Parsed skills: {results.parsed_profile.skills.join(', ') || 'none detected'}
-                </p>
+
+                {results && (
+                  <p className="text-textSecondary text-sm leading-relaxed mb-4">
+                    Parsed skills: {results.parsed_profile.skills.join(', ') || 'none detected'}
+                  </p>
+                )}
                 <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
-                  <div className="bg-red-500 h-full" style={{ width: `${Math.min(100, Math.max(0, results.risk_score))}%` }}></div>
+                  <div className="bg-red-500 h-full" style={{ width: `${Math.min(100, Math.max(0, riskScore ?? (results?.risk_score || 0)))}%` }}></div>
                 </div>
               </div>
 
-              <div className="card">
-                <h3 className="text-lg font-bold text-white mb-4">Suggested Pivot Role</h3>
-                <div className="p-3 bg-secondary rounded-xl border border-white/5 mb-4">
-                  <div className="font-semibold text-white text-sm">{results.reskilling_path.target_role}</div>
+              {results && (
+                <div className="card">
+                  <h3 className="text-lg font-bold text-white mb-4">Suggested Pivot Role</h3>
+                  <div className="p-3 bg-secondary rounded-xl border border-white/5 mb-4">
+                    <div className="font-semibold text-white text-sm">{results.reskilling_path.target_role}</div>
+                  </div>
+                  <ul className="space-y-2">
+                    {results.reskilling_path.plan.map((step) => (
+                      <li key={step} className="text-sm text-textSecondary">• {step}</li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="space-y-2">
-                  {results.reskilling_path.plan.map((step) => (
-                    <li key={step} className="text-sm text-textSecondary">• {step}</li>
-                  ))}
-                </ul>
-              </div>
+              )}
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/10 rounded-2xl">

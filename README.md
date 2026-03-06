@@ -40,6 +40,15 @@ The system requires both the FastAPI backend and React frontend to be running si
    venv\Scripts\activate
    pip install -r requirements.txt
    ```
+
+   Macos
+   '''
+   cd backend
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install -r requirements.txt
+   '''
+
 3. **Running the FastAPI server**:
    The FastAPI initialization (`app = FastAPI(...)`) is located in `backend/main.py`.
    ```bash

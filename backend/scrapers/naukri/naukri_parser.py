@@ -4,10 +4,18 @@ from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
+# Primary card container selectors — try in order, use first that matches.
+# If Naukri ever A/B-tests a new class, add it here without touching anything else.
 CARD_SELECTORS = [
     "div.cust-job-tuple",
     "div.srp-jobtuple-wrapper",
+    # Extended fallbacks observed on Naukri's React SPA variants:
+    "article.jobTuple",
+    "div[class*='jobTuple']",
+    "div[class*='job-tuple']",
+    "li.jobTuple",
 ]
+
 DESCRIPTION_SELECTORS = [
     "span.job-desc",
     "section.job-desc",
@@ -15,6 +23,27 @@ DESCRIPTION_SELECTORS = [
     "div.dang-inner-html",
     "[data-testid='job-description']",
 ]
+
+# Field selectors — each entry is a list of fallback selectors tried in order.
+_TITLE_SELECTORS    = ["a.title", "a[title]", "h2.title", "a.jobTitle"]
+_COMPANY_SELECTORS  = ["a.comp-name", "a.subTitle", "span.comp-name", "div.comp-name"]
+_LOCATION_SELECTORS = ["span.locWdth", "span.loc-wrap", "span.location", "li.location"]
+_EXP_SELECTORS      = ["span.expwdth", "span.exp-wrap", "span.experience", "li.experience"]
+_DESC_SELECTORS     = ["span.job-desc", "div.job-desc", "p.job-desc"]
+_SKILL_SELECTORS    = ["li.tag-li", "li.dot", "li.skill-li", "span.skill-tag"]
+
+
+def _first(card, selectors):
+    """Return the first element that matches any selector in the list."""
+    for sel in selectors:
+        el = card.select_one(sel)
+        if el:
+            return el
+    return None
+
+
+def _text(el):
+    return el.text.strip() if el else None
 
 
 def extract_job_cards(html):
@@ -27,35 +56,51 @@ def extract_job_cards(html):
         if cards:
             used_selector = selector
             break
-    logger.debug("Parser found %s job cards (selector=%s)", len(cards), used_selector)
+
+    logger.debug("Parser: %s cards found (selector=%s)", len(cards), used_selector)
+
+    if not cards:
+        # Emit a snippet of the HTML so we can diagnose selector drift quickly
+        # without enabling full debug-HTML saving.
+        preview = html[:800].replace("\n", " ").strip() if html else "<empty>"
+        logger.warning(
+            "extract_job_cards: 0 cards. None of %s matched. "
+            "HTML preview: %s",
+            CARD_SELECTORS,
+            preview,
+        )
 
     results = []
-
     for c in cards:
-        title = c.select_one("a.title")
-        company = c.select_one("a.comp-name") or c.select_one("a.subTitle")
-        location = c.select_one("span.locWdth") or c.select_one("span.loc-wrap")
-        exp = c.select_one("span.expwdth") or c.select_one("span.exp-wrap")
-        desc = c.select_one("span.job-desc")
+        title_el    = _first(c, _TITLE_SELECTORS)
+        company_el  = _first(c, _COMPANY_SELECTORS)
+        location_el = _first(c, _LOCATION_SELECTORS)
+        exp_el      = _first(c, _EXP_SELECTORS)
+        desc_el     = _first(c, _DESC_SELECTORS)
 
-        job_url = None
+        job_url = title_el.get("href") if title_el else None
 
-        if title:
-            job_url = title.get("href")
+        # Skills: try each selector and take the union
+        skills = []
+        for sel in _SKILL_SELECTORS:
+            found = [s.text.strip() for s in c.select(sel) if s.text.strip()]
+            if found:
+                skills = found
+                break
 
-        skills = [s.text.strip() for s in (c.select("li.tag-li") or c.select("li.dot"))]
-
-        results.append(
-            {
-                "title": title.text.strip() if title else None,
-                "company": company.text.strip() if company else None,
-                "location": location.text.strip() if location else None,
-                "experience": exp.text.strip() if exp else None,
-                "skills": skills,
-                "job_url": job_url,
-                "description": desc.text.strip() if desc else None,
-            }
-        )
+        results.append({
+            "jobtitle":            _text(title_el),
+            "company":             _text(company_el),
+            "joblocation_address": _text(location_el),
+            "experience":          _text(exp_el),
+            "skills":              skills,
+            "job_url":             job_url,
+            "jobdescription":      _text(desc_el),
+            # Keep legacy keys so downstream pipeline doesn't break
+            "title":               _text(title_el),
+            "location":            _text(location_el),
+            "description":         _text(desc_el),
+        })
 
     return results
 
@@ -63,19 +108,11 @@ def extract_job_cards(html):
 def extract_job_description(html):
     soup = BeautifulSoup(html, "lxml")
 
-    desc = None
-    selector_used = None
     for selector in DESCRIPTION_SELECTORS:
-        desc = soup.select_one(selector)
-        if desc:
-            selector_used = selector
-            break
-    if not desc:
-        logger.debug("No detail description found. tried selectors=%s", DESCRIPTION_SELECTORS)
-    else:
-        logger.debug("Detail description extracted with selector=%s", selector_used)
+        el = soup.select_one(selector)
+        if el:
+            logger.debug("Detail description extracted with selector=%s", selector)
+            return el.text.strip()
 
-    if desc:
-        return desc.text.strip()
-
+    logger.debug("No detail description found. tried=%s", DESCRIPTION_SELECTORS)
     return None

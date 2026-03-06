@@ -3,43 +3,9 @@ import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
     BarChart, Bar, PieChart, Pie, Cell
 } from 'recharts';
-import { Filter } from 'lucide-react';
 import { getHiringTrends, getTopCities, getIndustryDistribution } from '../../services/jobAnalytics';
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f43f5e', '#facc15'];
-const CITY_OPTIONS = [
-    'all',
-    'bangalore',
-    'hyderabad',
-    'pune',
-    'mumbai',
-    'delhi',
-    'chennai',
-    'ahmedabad',
-    'indore',
-    'jaipur',
-    'lucknow',
-    'kolkata',
-    'noida',
-    'gurgaon',
-    'coimbatore',
-    'kochi',
-    'trivandrum',
-    'nagpur',
-    'bhopal',
-    'surat',
-    'vadodara',
-    'patna',
-    'chandigarh',
-    'bhubaneswar',
-    'visakhapatnam',
-    'vijayawada',
-    'nashik',
-    'mysore',
-    'madurai',
-    'raipur',
-    'dehradun',
-];
 
 const formatCityName = (city: string) => {
     if (!city) return '';
@@ -50,8 +16,6 @@ const formatCityName = (city: string) => {
 };
 
 const HiringTrends = () => {
-    const [timeRange, setTimeRange] = useState('30days');
-    const [city, setCity] = useState('all');
 
     const [trendData, setTrendData] = useState<any[]>([]);
     const [cityData, setCityData] = useState<any[]>([]);
@@ -68,18 +32,11 @@ const HiringTrends = () => {
                 const sectors = await getIndustryDistribution();
 
                 if (mounted) {
-                    const filteredTrends = city === 'all'
-                        ? trends
-                        : trends.filter((t) => t.name.toLowerCase() === city);
-                    const filteredCities = city === 'all'
-                        ? cities
-                        : cities.filter((c) => c.name.toLowerCase() === city);
-
                     // Adapt the trends to include 'active' if needed, or just map 'value' to 'jobs'
-                    const mappedTrends = filteredTrends.map(t => ({ name: t.name, jobs: t.value, active: Math.round(t.value * 0.8) }));
+                    const mappedTrends = trends.map((t: any) => ({ name: t.name, jobs: t.value, active: Math.round(t.value * 0.8) }));
 
                     // Format city display names right before setting state
-                    const displayCities = filteredCities.map(c => ({ name: formatCityName(c.name), demand: c.demand }));
+                    const displayCities = cities.map((c: any) => ({ name: formatCityName(c.name), demand: c.demand }));
 
                     setTrendData(mappedTrends);
                     setCityData(displayCities);
@@ -93,7 +50,7 @@ const HiringTrends = () => {
         };
         loadData();
         return () => { mounted = false; };
-    }, [city, timeRange]);
+    }, []);
 
     if (loading) {
         return <div className="p-8 text-center text-white">Loading hiring trends...</div>;
@@ -107,32 +64,7 @@ const HiringTrends = () => {
                     <p className="text-textSecondary text-sm">Analyze job posting frequency across regions and sectors.</p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="relative">
-                        <Filter className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-textSecondary" />
-                        <select
-                            className="bg-secondary border border-white/10 text-white text-sm rounded-lg pl-9 pr-4 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-accent/50 cursor-pointer"
-                            value={city}
-                            onChange={(e) => setCity(e.target.value)}
-                        >
-                            {CITY_OPTIONS.map((c) => (
-                                <option key={c} value={c}>
-                                    {c === 'all' ? 'All Cities' : formatCityName(c)}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <select
-                        className="bg-secondary border border-white/10 text-white text-sm rounded-lg px-4 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-accent/50 cursor-pointer"
-                        value={timeRange}
-                        onChange={(e) => setTimeRange(e.target.value)}
-                    >
-                        <option value="7days">Past 7 days</option>
-                        <option value="30days">Past 30 days</option>
-                        <option value="90days">Past 90 days</option>
-                        <option value="1year">Past 1 year</option>
-                    </select>
+                <div>
                 </div>
             </div>
 

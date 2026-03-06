@@ -130,6 +130,10 @@ export type WorkerProfileResponse = {
   skills: string[];
   risk_score: number | null;
   ai_vulnerability: number | null;
+  reskilling_path: {
+    target_role: string;
+    plan: string[];
+  } | null;
 }
 
 export async function getWorkerProfileApi(): Promise<WorkerProfileResponse> {

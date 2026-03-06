@@ -8,10 +8,8 @@ import {
     UserSquare2,
     Route,
     MessageSquare,
-    LogOut,
-    Settings
+    LogOut
 } from 'lucide-react';
-import { useState } from 'react';
 
 const Sidebar = () => {
     const { logout } = useAuth();
@@ -71,12 +69,6 @@ const Sidebar = () => {
 
             <div className="p-4 border-t border-white/5">
                 <ul className="space-y-1">
-                    <li>
-                        <button className="w-full flex items-center gap-3 px-3 py-2 text-textSecondary hover:text-white hover:bg-white/5 rounded-lg transition-colors">
-                            <Settings className="w-5 h-5" />
-                            <span>Settings</span>
-                        </button>
-                    </li>
                     <li>
                         <button onClick={logout} className="w-full flex items-center gap-3 px-3 py-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-lg transition-colors">
                             <LogOut className="w-5 h-5" />

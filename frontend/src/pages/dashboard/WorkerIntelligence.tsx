@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Briefcase, MapPin, Search, Layers } from 'lucide-react';
+import { User, Briefcase, MapPin, Search, Layers, Info } from 'lucide-react';
 import { analyzeWorkerApi, getWorkerProfileApi, WorkerAnalyzeResponse } from '../../services/api';
 
 type FormState = {
@@ -11,12 +11,15 @@ type FormState = {
 };
 
 const WorkerIntelligence = () => {
-  const [formState, setFormState] = useState<FormState>({
-    title: '',
-    city: '',
-    experience: '',
-    description: '',
-    skills: ''
+  const [formState, setFormState] = useState<FormState>(() => {
+    const saved = localStorage.getItem('worker_form_draft');
+    return saved ? JSON.parse(saved) : {
+      title: '',
+      city: '',
+      experience: '',
+      description: '',
+      skills: ''
+    };
   });
 
   const [loading, setLoading] = useState(false);
@@ -24,6 +27,11 @@ const WorkerIntelligence = () => {
   const [results, setResults] = useState<WorkerAnalyzeResponse | null>(null);
   const [riskScore, setRiskScore] = useState<number | null>(null);
   const [aiVulnerability, setAiVulnerability] = useState<number | null>(null);
+
+  // Persist form state to localStorage
+  useEffect(() => {
+    localStorage.setItem('worker_form_draft', JSON.stringify(formState));
+  }, [formState]);
 
   // Auto-fill form data from Backend
   useEffect(() => {
@@ -45,7 +53,20 @@ const WorkerIntelligence = () => {
         if (profile.ai_vulnerability !== null && profile.ai_vulnerability !== undefined) {
           setAiVulnerability(profile.ai_vulnerability);
         }
-        // Optionally fetch an implicit calculation if risk_score exists? (Ignored per prompt requirements)
+
+        if (profile.reskilling_path) {
+          setResults({
+            parsed_profile: {
+              role: profile.job_role || '',
+              city: profile.city || '',
+              experience: profile.years_of_experience || 0,
+              skills: profile.skills || []
+            },
+            risk_score: profile.risk_score || 0,
+            ai_vulnerability: profile.ai_vulnerability || 0,
+            reskilling_path: profile.reskilling_path
+          });
+        }
       } catch (err) {
         // Silent catch unless it's a critical unauthenticated fault
       }
@@ -198,17 +219,45 @@ const WorkerIntelligence = () => {
               </div>
 
               {results && (
-                <div className="card">
-                  <h3 className="text-lg font-bold text-white mb-4">Suggested Pivot Role</h3>
-                  <div className="p-3 bg-secondary rounded-xl border border-white/5 mb-4">
-                    <div className="font-semibold text-white text-sm">{results.reskilling_path.target_role}</div>
+                <>
+                  <div className="card">
+                    <h3 className="text-lg font-bold text-white mb-4">Suggested Pivot Role</h3>
+                    <div className="p-3 bg-secondary rounded-xl border border-white/5 mb-4">
+                      <div className="font-semibold text-white text-sm">{results.reskilling_path.target_role}</div>
+                    </div>
+                    <ul className="space-y-2">
+                      {results.reskilling_path.plan.map((step) => (
+                        <li key={step} className="text-sm text-textSecondary">• {step}</li>
+                      ))}
+                    </ul>
                   </div>
-                  <ul className="space-y-2">
-                    {results.reskilling_path.plan.map((step) => (
-                      <li key={step} className="text-sm text-textSecondary">• {step}</li>
-                    ))}
-                  </ul>
-                </div>
+
+                  <div className="card">
+                    <div className="flex items-center gap-2 mb-4 text-white">
+                      <Info className="w-5 h-5 text-accent" />
+                      <h3 className="text-lg font-bold">Risk Methodology</h3>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="p-3 bg-secondary/50 rounded-xl border border-white/5">
+                        <p className="text-xs font-semibold text-accent uppercase mb-2">Risk Score Formula</p>
+                        <code className="text-[10px] text-textSecondary block leading-relaxed">
+                          Risk = Base Risk + (Regional Adjust × 0.1) - (Exp Reduction) + (Entry Penalty)
+                        </code>
+                        <ul className="mt-2 space-y-1 text-[10px] text-textSecondary/80">
+                          <li>• Base Risk: Calculated from role automation vulnerability.</li>
+                          <li>• Exp Reduction: Up to 25 points reduction based on years of tenure.</li>
+                          <li>• Entry Penalty: 15 point addition for users with &lt; 1 year experience.</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-accent uppercase mb-1">Pivot Role Logic</p>
+                        <p className="text-[11px] text-textSecondary leading-relaxed">
+                          Our engine identifies transition paths by mapping current operational fatigue to AI-resilient growth roles. BPO profiles are prioritized for AI Content Moderation, while general roles pivot toward Data Analytics.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           ) : (

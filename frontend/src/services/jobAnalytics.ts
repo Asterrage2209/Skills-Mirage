@@ -7,7 +7,9 @@ import {
   getLatestJobsApi,
   getTopCitiesApi,
   getIndustryDistributionApi,
-  getTopRolesApi
+  getTopRolesApi,
+  getRoleDistributionApi,
+  getCitySpreadApi
 } from './api';
 
 
@@ -75,4 +77,12 @@ export const getIndustryDistribution = async () => {
 
 export const getTopRoles = async () => {
   return await getTopRolesApi();
+};
+
+export const getRoleDistribution = async (city: string) => {
+  return await getRoleDistributionApi(city);
+};
+
+export const getCitySpread = async (role: string) => {
+  return await getCitySpreadApi(role);
 };

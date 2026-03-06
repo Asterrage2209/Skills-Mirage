@@ -6,6 +6,7 @@ import {
 import { Users, Building2, BrainCircuit, ShieldAlert, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
 import { getHiringTrends, getTopSkills, getDashboardSummary, refreshJobsData } from '../../services/jobAnalytics';
 import LatestJobs from './LatestJobs';
+import DynamicInsights from './DynamicInsights';
 
 // Helper function to format strings to Title Case for display
 const formatDisplayName = (name: string) => {
@@ -167,6 +168,7 @@ const Overview = () => {
             </div>
 
             <LatestJobs refreshTrigger={refreshTrigger} />
+            <DynamicInsights refreshTrigger={refreshTrigger} />
         </div>
     );
 };

@@ -61,6 +61,16 @@ export async function getTopRolesApi(): Promise<any[]> {
   return toJson<any[]>(res);
 }
 
+export async function getRoleDistributionApi(city: string): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/dashboard/city-role-distribution?city=${encodeURIComponent(city)}`);
+  return toJson<any[]>(res);
+}
+
+export async function getCitySpreadApi(role: string): Promise<any[]> {
+  const res = await fetch(`${API_BASE}/dashboard/role-city-distribution?role=${encodeURIComponent(role)}`);
+  return toJson<any[]>(res);
+}
+
 export async function getScrapedJobsApi(
   refresh = true
 ): Promise<{

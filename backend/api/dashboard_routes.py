@@ -88,3 +88,31 @@ def top_roles():
     jobs = get_all_jobs()
     counts = Counter(str(job.get("title", "")).strip() for job in jobs if job.get("title"))
     return [{"role": role, "count": count} for role, count in counts.most_common(10)]
+
+@router.get("/city-role-distribution")
+def city_role_distribution(city: str):
+    jobs = get_all_jobs()
+    city_lower = city.lower()
+    counts = Counter()
+    for job in jobs:
+        candidate_city = str(job.get("city", "")).lower()
+        if candidate_city == city_lower:
+            role = str(job.get("title", "")).strip()
+            if role:
+                counts[role] += 1
+                
+    return [{"name": role, "value": count} for role, count in counts.most_common(10)]
+
+@router.get("/role-city-distribution")
+def role_city_distribution(role: str):
+    jobs = get_all_jobs()
+    role_lower = role.lower()
+    counts = Counter()
+    for job in jobs:
+        candidate_role = str(job.get("title", "")).lower()
+        if candidate_role == role_lower:
+            city = str(job.get("city", "")).strip()
+            if city:
+                counts[city] += 1
+                
+    return [{"name": city, "value": count} for city, count in counts.most_common(10)]

@@ -30,8 +30,9 @@ def load_dataset():
         _jobs_df = pd.DataFrame()
 
 def get_all_jobs():
-    if _jobs_df is None:
-        load_dataset()
+    global _jobs_df
+    # Always reload to ensure we have the freshest data if it was modified externally or by scraper
+    load_dataset()
     if _jobs_df is None or _jobs_df.empty:
         return []
 
@@ -97,8 +98,8 @@ def append_jobs(new_jobs):
         save_dataset()
 
 def get_latest_jobs(limit=100):
-    if _jobs_df is None:
-        load_dataset()
+    global _jobs_df
+    load_dataset()
         
     if _jobs_df is None or _jobs_df.empty:
         return []

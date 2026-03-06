@@ -53,13 +53,14 @@ def _normalize_course(course):
     }
 
 
-def run_courses_scraper(swayam=True, nptel=True):
+def run_courses_scraper(swayam=True, nptel=True, max_per_source=200):
     """
     Run the full course scrape pipeline.
 
     Args:
-        swayam: Whether to scrape SWAYAM (default True)
-        nptel:  Whether to scrape NPTEL (default True)
+        swayam:         Whether to scrape SWAYAM (default True)
+        nptel:          Whether to scrape NPTEL (default True)
+        max_per_source: Max courses to scrape per source (default 200)
 
     Returns:
         dict with stats: total_courses, swayam_count, nptel_count,
@@ -88,7 +89,7 @@ def run_courses_scraper(swayam=True, nptel=True):
         if swayam:
             logger.info("Scraping SWAYAM...")
             try:
-                swayam_courses = scrape_swayam()
+                swayam_courses = scrape_swayam(max_courses=max_per_source)
                 swayam_count = len(swayam_courses)
                 all_courses.extend(swayam_courses)
                 logger.info("SWAYAM done: %s courses", swayam_count)
@@ -98,7 +99,7 @@ def run_courses_scraper(swayam=True, nptel=True):
         if nptel:
             logger.info("Scraping NPTEL...")
             try:
-                nptel_courses = scrape_nptel()
+                nptel_courses = scrape_nptel(max_courses=max_per_source)
                 nptel_count = len(nptel_courses)
                 all_courses.extend(nptel_courses)
                 logger.info("NPTEL done: %s courses", nptel_count)
@@ -136,11 +137,15 @@ def run_courses_scraper(swayam=True, nptel=True):
     return stats
 
 
-def run_courses_scraper_background():
+def run_courses_scraper_background(max_per_source=200):
     """Run in a daemon thread — used for startup auto-trigger."""
-    t = threading.Thread(target=run_courses_scraper, daemon=True)
+    t = threading.Thread(
+        target=run_courses_scraper,
+        kwargs={"max_per_source": max_per_source},
+        daemon=True,
+    )
     t.start()
-    logger.info("Courses scraper started in background thread")
+    logger.info("Courses scraper started in background thread (max_per_source=%s)", max_per_source)
     return t
 
 

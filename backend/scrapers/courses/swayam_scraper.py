@@ -1,64 +1,48 @@
 """
-swayam_scraper.py (v2)
+swayam_scraper.py (v4)
 ----------------------
-SWAYAM courses from non-NPTEL national coordinators (CEC, IGNOU, IIMB, UGC, INI, AICTE, NIOS).
-NPTEL courses are handled separately by nptel_scraper.py.
+SWAYAM courses from non-NPTEL national coordinators:
+  CEC, IIMB, NITTTR, AICTE, INI, UGC, IGNOU
 
 Strategy:
-  1. Download the official SWAYAM approved course list (public Google Sheet → CSV).
-     Jan 2026 semester sheet is linked directly from swayam.gov.in/explorer announcements.
-  2. For each course ID, scrape its server-rendered preview page at:
-         https://onlinecourses.swayam2.ac.in/{course_id}/preview
-     These pages ARE fully server-rendered HTML — BeautifulSoup works perfectly.
-     (swayam.gov.in/explorer is a React SPA shell — never scrape that)
+  Since swayam2.ac.in uses a Next.js SPA (no server-rendered HTML),
+  we extract ALL course data directly from the Google Sheet CSV tabs.
+  Each tab contains rich metadata:
+    - Course Title, Discipline, Coordinator, Start/End dates
+    - Host University, Level, NCrF, Duration, Credits
+    - Industry Aligned, Industry Sectors, Language, Preview URL
 
-Course ID format: {nc_prefix}{YY}_{subject_code}  e.g. cec25_cs01, ini25_cs04
+  This gives us 700+ courses without needing to hit the SPA at all.
 """
 
+import csv
+import io
 import logging
 import re
 import time
 import requests
-from bs4 import BeautifulSoup
 
 logger = logging.getLogger(__name__)
 
-# Public CSV export of the Jan 2026 SWAYAM approved course list
-# Linked from: https://swayam.gov.in/explorer announcements
-COURSE_LIST_CSV_URL = (
+# ─── Google Sheet tab GIDs (each coordinator has its own tab) ────────────────
+SHEET_BASE = (
     "https://docs.google.com/spreadsheets/d/e/"
     "2PACX-1vSJ8bOdQOcMPTSADcqznwBr-Em2zzbMGae5e-wKj7SoRuo6CrgF6Csj8n-xfTYyCA"
-    "/pub?output=csv"
+    "/pub?output=csv&gid="
 )
 
-PREVIEW_BASE = "https://onlinecourses.swayam2.ac.in"
+# Coordinator → Sheet tab GID
+COORDINATOR_TABS = {
+    "CEC":    "2033916737",
+    "IIMB":   "614727677",
+    "NITTTR": "1431459972",
+    "AICTE":  "36327938",
+    "INI":    "1605318222",
+    "UGC":    "986949470",
+    "IGNOU":  "1291455978",
+}
 
-# Fallback IDs used when Google Sheet is inaccessible
-# Mix of confirmed-working IDs from various coordinators
-FALLBACK_COURSE_IDS = [
-    # CEC - Computer Science
-    "cec25_cs01", "cec25_cs02", "cec25_cs03", "cec25_cs04", "cec25_cs05",
-    "cec25_cs06", "cec25_cs07", "cec25_cs08", "cec25_cs09", "cec25_cs10",
-    "cec23_cs01",
-    # CEC - Management
-    "cec25_mg01", "cec25_mg02", "cec25_mg03",
-    # INI - CS / Data Science
-    "ini25_cs01", "ini25_cs02", "ini25_cs03", "ini25_cs04", "ini25_cs05",
-    # INI - Management
-    "ini25_mg01", "ini25_mg02", "ini25_mg200", "imb25_mg200",
-    # IIMB - Management
-    "iimb25_mg01", "iimb25_mg02", "iimb25_mg03",
-    # UGC
-    "ugc25_hs01", "ugc25_hs02", "ugc25_ss01", "ugc25_ss02",
-    # AICTE
-    "aicte25_cs01", "aicte25_cs02",
-    # NTR (NITTTR)
-    "ntr25_ed01", "ntr25_ed02", "ntr25_cs01", "ntr25_ed123",
-    # NIOS
-    "nos21_sc14",
-    # Older stable re-run courses
-    "cec21_cs08",
-]
+PREVIEW_BASE = "https://onlinecourses.swayam2.ac.in"
 
 HEADERS = {
     "User-Agent": (
@@ -67,8 +51,45 @@ HEADERS = {
         "Chrome/122.0.0.0 Safari/537.36"
     ),
 }
-REQUEST_TIMEOUT = 12
-DELAY = 0.6
+REQUEST_TIMEOUT = 15
+
+# ─── Noise filter ────────────────────────────────────────────────────────────
+_NOISE_PATTERNS = {
+    "computer science and engineering", "computer science & engineering",
+    "computer science", "electrical engineering",
+    "electronics and communications engineering",
+    "mechanical engineering", "civil engineering", "chemical engineering",
+    "design engineering", "management studies", "mathematics",
+    "humanities and social sciences", "humanities & social sciences",
+    "architecture and planning", "multidisciplinary", "biotechnology",
+    "aerospace engineering", "metallurgical and materials engineering",
+    "textile engineering", "mining engineering", "ocean engineering",
+    "physics", "chemistry", "biosciences", "bioengineering",
+    "environmental science", "information technology",
+    "generic elective", "foundation course", "community science",
+    # Abbreviations
+    "cse", "ece", "eee", "ee", "me", "ce", "it",
+    # Degree / audience noise
+    "undergraduate", "postgraduate", "ug", "pg",
+    "b.tech", "m.tech", "b.sc", "m.sc", "ph.d", "phd",
+    "btech", "mtech", "mba", "bba", "b.com", "m.com",
+    "b.a", "m.a", "ba", "ma", "b.a.", "m.a.",
+    "b.sc.", "m.sc.", "ba hons", "ba hons.",
+    "students", "faculty", "open for all", "open to all",
+    "engineering students", "engineering colleges",
+    "in general", "etc.", "etc", "na", "no",
+    "yes", "teaching", "cop",
+}
+
+# Degree/program patterns matched by regex
+_NOISE_DEGREE_PATTERNS = re.compile(
+    r'^(b\.?b\.?a|b\.?com|m\.?com|b\.?sc|m\.?sc|b\.?a|m\.?a|b\.?tech|m\.?tech|'
+    r'phd|mba|bba|b\.?e|m\.?e)'
+    r'(\s|\.|\(|$)', re.I
+)
+
+_MIN_TAG_LEN = 3
+_MAX_TAG_LEN = 60
 
 
 def _get(url):
@@ -83,141 +104,267 @@ def _get(url):
     return None
 
 
-def _fetch_course_ids_from_sheet():
-    """Download official course list sheet and extract course IDs."""
-    resp = _get(COURSE_LIST_CSV_URL)
-    if not resp:
-        logger.warning("SWAYAM sheet inaccessible — will use fallback IDs.")
-        return []
-
-    ids = []
-    for line in resp.text.splitlines():
-        matches = re.findall(r'swayam2\.ac\.in/([a-z0-9_]+)/preview', line)
-        ids.extend(matches)
-
-    # Deduplicate; exclude NPTEL (noc* IDs) — handled by nptel_scraper.py
-    ids = list(dict.fromkeys(cid for cid in ids if not cid.startswith("noc")))
-    logger.info("SWAYAM sheet: found %s non-NPTEL course IDs", len(ids))
-    return ids
-
-
-def _parse_preview(soup, course_id):
-    """Parse a server-rendered /preview page into a course dict."""
-
-    # Name
-    h1 = soup.find("h1")
-    name = h1.text.strip() if h1 else None
-
-    # Institution — "By Prof. X   |   IIT Kanpur"
-    institution = ""
-    by_el = soup.find(string=re.compile(r"^\s*By "))
-    if by_el:
-        parts = str(by_el).split("|")
-        if len(parts) >= 2:
-            institution = parts[-1].strip()
-
-    # Domain / Category
-    domain = ""
-    cat_td = soup.find("td", string=re.compile(r"Category", re.I))
-    if cat_td:
-        val_td = cat_td.find_next_sibling("td")
-        if val_td:
-            items = [li.text.strip() for li in val_td.find_all("li")]
-            domain = items[0] if items else val_td.get_text(strip=True)
-
-    # Duration in weeks
-    duration_weeks = None
-    dur_td = soup.find("td", string=re.compile(r"Duration", re.I))
-    if dur_td:
-        val_td = dur_td.find_next_sibling("td")
-        if val_td:
-            m = re.search(r"(\d+)", val_td.text)
-            duration_weeks = int(m.group(1)) if m else None
-
-    # Difficulty / Level
-    difficulty = ""
-    lvl_td = soup.find("td", string=re.compile(r"^Level", re.I))
-    if lvl_td:
-        val_td = lvl_td.find_next_sibling("td")
-        if val_td:
-            difficulty = val_td.get_text(strip=True)
-
-    # Skill tags from Category li items + INTENDED AUDIENCE
-    skill_tags = []
-    if cat_td:
-        val_td = cat_td.find_next_sibling("td")
-        if val_td:
-            skill_tags = [li.text.strip() for li in val_td.find_all("li") if li.text.strip()]
-    full_text = soup.get_text()
-    audience = re.search(r"INTENDED AUDIENCE[:\s]+([^\n*]{5,100})", full_text, re.I)
-    if audience:
-        for word in audience.group(1).split(","):
-            tag = word.strip().strip("*").strip()
-            if tag and len(tag) < 50 and tag not in skill_tags:
-                skill_tags.append(tag)
-
-    # Syllabus — Week N: description
-    syllabus = []
-    layout = soup.find(lambda t: t.name in ["h3", "h4"] and "course layout" in t.text.lower())
-    if layout:
-        for tag in layout.find_all_next(["strong", "b"]):
-            text = tag.get_text(strip=True)
-            if re.match(r"Week\s+\d+", text, re.I):
-                syllabus.append(text)
-            if len(syllabus) >= 16:
-                break
-    if not syllabus:
-        for m in re.finditer(r"(Week\s+\d+[:\s][^\n]{5,100})", full_text):
-            entry = m.group(1).strip()
-            if entry not in syllabus:
-                syllabus.append(entry)
-            if len(syllabus) >= 16:
-                break
-
-    return {
-        "name": name,
-        "source": "SWAYAM",
-        "domain": domain,
-        "url": f"{PREVIEW_BASE}/{course_id}/preview",
-        "institution": institution,
-        "duration_weeks": duration_weeks,
-        "difficulty": difficulty,
-        "skill_tags": skill_tags[:15],
-        "syllabus_weeks": syllabus[:16],
+def _is_noise(tag):
+    """Return True if the tag is a discipline, degree, or noise term."""
+    tag_lower = tag.lower().strip()
+    if len(tag_lower) < _MIN_TAG_LEN or len(tag_lower) > _MAX_TAG_LEN:
+        return True
+    if tag_lower in _NOISE_PATTERNS:
+        return True
+    if re.search(r'\s[a-z]$', tag_lower):
+        return True
+    sentence_markers = [
+        " would ", " should ", " could ", " will ", " this ", " that ",
+        " value ", " find ", " useful", " desirable", " required",
+        " not essential", " but not", " although",
+        "students of ", "students in ", " students",
+        "ug and pg", "ug or pg", "undergraduate",
+        " who ", " are ", " is ", " was ", " has ", " have ",
+    ]
+    for marker in sentence_markers:
+        if marker in tag_lower:
+            return True
+    if "industry support" in tag_lower or "prerequisites" in tag_lower:
+        return True
+    if "intended audience" in tag_lower:
+        return True
+    if re.match(r'^(b\.?tech|m\.?tech|b\.?sc|m\.?sc|phd|mba|bba)\b', tag_lower):
+        return True
+    if '\t' in tag_lower:
+        return True
+    generic_words = {
+        "e.g", "e.g.", "i.e", "i.e.", "and", "or", "the", "for", "with",
+        "any", "all", "also", "based", "basic", "level", "course",
+        "module", "introduction", "various", "related",
     }
+    if tag_lower in generic_words:
+        return True
+    if tag_lower.startswith("and ") or tag_lower.startswith("or "):
+        return True
+    if '(' in tag_lower and len(tag_lower) > 30:
+        return True
+    if tag_lower.startswith("exposure to "):
+        return True
+    if tag_lower.endswith("etc.") or tag_lower.endswith("etc.)") or tag_lower == "etc":
+        return True
+    # Skip degree/program names like B.B.A, B.Com. (Honours)
+    if _NOISE_DEGREE_PATTERNS.match(tag_lower):
+        return True
+    # Skip URL fragments
+    if re.match(r'^(https?://|www\.|[a-z]+\.ac\.|[a-z]+\.com)', tag_lower):
+        return True
+    return False
 
 
-def _scrape_one(course_id):
-    url = f"{PREVIEW_BASE}/{course_id}/preview"
-    resp = _get(url)
-    if not resp:
+def _clean_skill_tags(raw_tags):
+    """Deduplicate, filter noise, normalize."""
+    seen = set()
+    clean = []
+    for tag in raw_tags:
+        tag = tag.strip()
+        if not tag or _is_noise(tag):
+            continue
+        key = tag.lower().strip()
+        if key not in seen:
+            seen.add(key)
+            clean.append(tag)
+    return clean
+
+
+def _extract_skills_from_text(text):
+    """Split comma/semicolon separated text into skill terms."""
+    if not text:
+        return []
+    skills = []
+    for part in re.split(r'[,;]', text):
+        tag = part.strip().strip("*").strip(".")
+        tag = tag.strip()
+        if tag and not _is_noise(tag):
+            skills.append(tag)
+    return skills
+
+
+# ─── Column index detection ──────────────────────────────────────────────────
+
+def _find_columns(header_row):
+    """
+    Try to detect which column index corresponds to which field.
+    Different coordinators may have slightly different column orders.
+    Returns a dict of field_name → column_index.
+    """
+    mapping = {}
+    for idx, cell in enumerate(header_row):
+        cell_lower = cell.lower().strip()
+        if "course title" in cell_lower or (cell_lower == "title"):
+            mapping["title"] = idx
+        elif "discipline" in cell_lower:
+            mapping["discipline"] = idx
+        elif "university" in cell_lower or "institute" in cell_lower or "host" in cell_lower:
+            mapping["institution"] = idx
+        elif "level" in cell_lower and "ncrf" not in cell_lower:
+            mapping["level"] = idx
+        elif "duration" in cell_lower:
+            mapping["duration"] = idx
+        elif "industry sector" in cell_lower or "sectors" in cell_lower:
+            mapping["industry_sectors"] = idx
+        elif "preview" in cell_lower and "url" in cell_lower:
+            mapping["url"] = idx
+        elif "language" in cell_lower and "translation" not in cell_lower and "subtitle" not in cell_lower:
+            mapping["language"] = idx
+        elif "program" in cell_lower and "aligned" in cell_lower:
+            mapping["program"] = idx
+    return mapping
+
+
+def _parse_duration(duration_str):
+    """Extract numeric duration in weeks from string like '12', '4.5', '12 weeks'."""
+    if not duration_str:
         return None
-    soup = BeautifulSoup(resp.text, "lxml")
-    h1 = soup.find("h1")
-    if not h1 or len(h1.text.strip()) < 3:
-        return None
-    course = _parse_preview(soup, course_id)
-    if course.get("name"):
-        logger.debug("SWAYAM scraped: %s", course["name"])
-        return course
+    m = re.search(r'(\d+\.?\d*)', str(duration_str))
+    if m:
+        return int(float(m.group(1)))
     return None
 
 
+# ─── Sheet parsing ───────────────────────────────────────────────────────────
+
+def _parse_sheet_tab(csv_text, coordinator):
+    """
+    Parse a coordinator's CSV sheet tab into course dicts.
+    Extracts ALL course data directly from the sheet — no preview page needed.
+    """
+    courses = []
+    reader = csv.reader(io.StringIO(csv_text))
+    rows = list(reader)
+
+    if len(rows) < 2:
+        return courses
+
+    # Find the header row (may not be the first row — some have a title row)
+    header_idx = None
+    for i, row in enumerate(rows[:5]):
+        row_text = " ".join(cell.lower() for cell in row)
+        if "course title" in row_text or "preview" in row_text:
+            header_idx = i
+            break
+
+    if header_idx is None:
+        logger.debug("No header row found in %s sheet", coordinator)
+        return courses
+
+    col_map = _find_columns(rows[header_idx])
+    if "title" not in col_map:
+        # Try finding title by looking for "Course Title" explicitly
+        for idx, cell in enumerate(rows[header_idx]):
+            if "title" in cell.lower():
+                col_map["title"] = idx
+                break
+
+    if "title" not in col_map:
+        logger.warning("Cannot find 'title' column in %s sheet", coordinator)
+        return courses
+
+    # Parse data rows
+    for row in rows[header_idx + 1:]:
+        if len(row) <= col_map.get("title", 0):
+            continue
+
+        title = row[col_map["title"]].strip()
+        if not title or len(title) < 3:
+            continue
+
+        # Skip non-English titles (Hindi etc.) — they won't match naukri skills
+        # Allow titles with common English chars, numbers, and basic punctuation
+        if not re.search(r'[a-zA-Z]', title):
+            continue
+
+        # Build course dict
+        discipline = row[col_map["discipline"]].strip() if "discipline" in col_map and len(row) > col_map["discipline"] else ""
+        institution = row[col_map["institution"]].strip() if "institution" in col_map and len(row) > col_map["institution"] else ""
+        level = row[col_map["level"]].strip() if "level" in col_map and len(row) > col_map["level"] else ""
+        duration_raw = row[col_map["duration"]].strip() if "duration" in col_map and len(row) > col_map["duration"] else ""
+        industry = row[col_map["industry_sectors"]].strip() if "industry_sectors" in col_map and len(row) > col_map["industry_sectors"] else ""
+        url_val = row[col_map["url"]].strip() if "url" in col_map and len(row) > col_map["url"] else ""
+
+        # Extract URL (find the preview URL in the cell)
+        url_match = re.search(r'(https://[^\s,;]+/preview)', url_val)
+        if url_match:
+            url_val = url_match.group(1)
+        elif not url_val.startswith("http"):
+            url_val = ""
+
+        # ─── Skill Tags ─────────────────────────────────────────────────
+        skill_tags = []
+
+        # 1. Course title = primary skill
+        if not _is_noise(title):
+            skill_tags.append(title)
+
+        # 2. Discipline → often meaningful (e.g. "Cyber Security", "Management")
+        if discipline:
+            skill_tags.extend(_extract_skills_from_text(discipline))
+
+        # 3. Industry sectors → direct skill/domain mapping
+        if industry:
+            skill_tags.extend(_extract_skills_from_text(industry))
+
+        # 4. Program aligned field sometimes has useful info
+        program = row[col_map["program"]].strip() if "program" in col_map and len(row) > col_map["program"] else ""
+        if program:
+            skill_tags.extend(_extract_skills_from_text(program))
+
+        skill_tags = _clean_skill_tags(skill_tags)
+
+        course = {
+            "name": title,
+            "source": "SWAYAM",
+            "domain": discipline if discipline and not _is_noise(discipline) else f"{coordinator} Course",
+            "url": url_val,
+            "institution": institution,
+            "duration_weeks": _parse_duration(duration_raw),
+            "difficulty": level,
+            "skill_tags": skill_tags[:15],
+            "syllabus_weeks": [],  # Not available from sheet data
+        }
+        courses.append(course)
+
+    return courses
+
+
 def scrape_swayam(max_courses=300):
-    """Main entry point. Returns list of course dicts."""
+    """
+    Main entry point. Returns list of course dicts.
+
+    Fetches course data from all coordinator tabs in the Google Sheet.
+    No preview page scraping needed — all data comes from the sheet.
+    """
     logger.info("Starting SWAYAM scrape (max=%s)", max_courses)
 
-    ids = _fetch_course_ids_from_sheet()
-    if not ids:
-        logger.info("Using %s fallback IDs", len(FALLBACK_COURSE_IDS))
-        ids = FALLBACK_COURSE_IDS
+    all_courses = []
+    for coord_name, gid in COORDINATOR_TABS.items():
+        url = f"{SHEET_BASE}{gid}"
+        logger.info("Fetching %s sheet tab (gid=%s)...", coord_name, gid)
+        resp = _get(url)
+        if not resp:
+            logger.warning("Failed to fetch %s sheet tab", coord_name)
+            continue
 
-    courses = []
-    for cid in ids[:max_courses]:
-        time.sleep(DELAY)
-        c = _scrape_one(cid)
-        if c:
-            courses.append(c)
+        courses = _parse_sheet_tab(resp.text, coord_name)
+        logger.info("  %s: parsed %s courses from sheet", coord_name, len(courses))
+        all_courses.extend(courses)
 
-    logger.info("SWAYAM done: %s courses scraped", len(courses))
-    return courses
+        if len(all_courses) >= max_courses:
+            break
+
+    # Deduplicate by name
+    seen = set()
+    unique = []
+    for c in all_courses:
+        key = c["name"].lower().strip()
+        if key not in seen:
+            seen.add(key)
+            unique.append(c)
+
+    unique = unique[:max_courses]
+    logger.info("SWAYAM done: %s unique courses", len(unique))
+    return unique

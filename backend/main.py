@@ -12,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api import dashboard_routes, worker_routes, chatbot_routes
 from api.courses_routes import router as courses_router
-from data.courses_dataset import is_empty as courses_dataset_is_empty
+from data.courses_dataset import is_empty as courses_dataset_is_empty, get_course_count
 from scrapers.courses.courses_scraper import (
     run_courses_scraper,
     run_courses_scraper_background,
@@ -20,15 +20,21 @@ from scrapers.courses.courses_scraper import (
 
 logger = logging.getLogger(__name__)
 
+MIN_COURSES = 200  # Keep scraping until we have at least this many
+
 # ── Scheduler (module-level so lifespan can shut it down cleanly) ─────────────
 scheduler = BackgroundScheduler()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ── On startup: scrape courses if dataset is empty ────────────────────────
-    if courses_dataset_is_empty():
-        logger.info("Courses dataset is empty — starting initial scrape in background.")
+    # ── On startup: scrape courses if below minimum threshold ─────────────────
+    course_count = get_course_count()
+    if course_count < MIN_COURSES:
+        logger.info(
+            "Courses dataset has %s courses (need %s) — starting scrape in background.",
+            course_count, MIN_COURSES,
+        )
         run_courses_scraper_background()
 
     # ── Weekly refresh every 7 days ───────────────────────────────────────────
@@ -36,6 +42,7 @@ async def lifespan(app: FastAPI):
         run_courses_scraper,
         trigger="interval",
         days=7,
+        kwargs={"max_per_source": 50},  # 50 NPTEL + 50 SWAYAM = 100 new courses/week
         id="weekly_courses_scrape",
         replace_existing=True,
     )

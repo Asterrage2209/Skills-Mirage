@@ -148,6 +148,12 @@ const HiringTrends = () => {
                             <RechartsTooltip
                                 contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                 itemStyle={{ color: '#e5e7eb' }}
+                                labelFormatter={(label) => `Period: ${label}`}
+                                formatter={(value, name) => {
+                                    if (name === 'jobs') return [value, 'Job Postings'];
+                                    if (name === 'active') return [value, 'Estimated Active Roles'];
+                                    return [value, String(name)];
+                                }}
                             />
                             <Line yAxisId="left" type="monotone" dataKey="jobs" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                             <Line yAxisId="right" type="monotone" dataKey="active" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
@@ -168,6 +174,8 @@ const HiringTrends = () => {
                                 <RechartsTooltip
                                     cursor={{ fill: '#ffffff05' }}
                                     contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
+                                    labelFormatter={(label) => `City: ${label}`}
+                                    formatter={(value) => [value, 'Job Demand']}
                                 />
                                 <Bar dataKey="demand" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
                             </BarChart>
@@ -207,6 +215,7 @@ const HiringTrends = () => {
                                             color: '#fff'
                                         }}
                                         itemStyle={{ color: '#e5e7eb' }}
+                                        formatter={(value) => [value, 'Sector Job Share']}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>

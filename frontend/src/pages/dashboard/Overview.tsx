@@ -4,7 +4,7 @@ import {
     BarChart, Bar
 } from 'recharts';
 import { Users, Building2, BrainCircuit, ShieldAlert, ArrowUpRight, ArrowDownRight, RefreshCw } from 'lucide-react';
-import { getHiringTrends, getTopSkills, getDashboardSummary, refreshJobsData } from '../../services/jobAnalytics';
+import { getHiringTrends, getTopSkills, getDashboardSummary, refreshJobsData, getSkillTrendYears } from '../../services/jobAnalytics';
 import LatestJobs from './LatestJobs';
 import DynamicInsights from './DynamicInsights';
 
@@ -49,6 +49,8 @@ const Overview = () => {
     const [summary, setSummary] = useState({ totalJobs: 0, topCity: '-', topSkill: '-', topRole: '-' });
     const [hiringData, setHiringData] = useState<any[]>([]);
     const [skillsData, setSkillsData] = useState<any[]>([]);
+    const [skillYears, setSkillYears] = useState<number[]>([]);
+    const [selectedSkillYear, setSelectedSkillYear] = useState<number | 'all' | null>(null);
     const [loading, setLoading] = useState(true);
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -57,14 +59,17 @@ const Overview = () => {
         let mounted = true;
         const loadData = async () => {
             try {
-                const sum = await getDashboardSummary();
-                const hire = await getHiringTrends();
-                const skills = await getTopSkills();
+                const [sum, hire, years] = await Promise.all([
+                    getDashboardSummary(),
+                    getHiringTrends(),
+                    getSkillTrendYears(),
+                ]);
 
                 if (mounted) {
                     setSummary(sum);
                     setHiringData(hire);
-                    setSkillsData(skills);
+                    setSkillYears(years);
+                    setSelectedSkillYear(years.length > 0 ? years[0] : 'all');
                     setLoading(false);
                 }
             } catch (err) {
@@ -76,16 +81,47 @@ const Overview = () => {
         return () => { mounted = false; };
     }, []);
 
+    useEffect(() => {
+        let mounted = true;
+
+        const loadSkills = async () => {
+            if (selectedSkillYear === null) return;
+            try {
+                const year = selectedSkillYear === 'all' ? undefined : selectedSkillYear;
+                const skills = await getTopSkills(year);
+                if (mounted) {
+                    setSkillsData(skills);
+                }
+            } catch (err) {
+                console.error('Error loading top skills:', err);
+            }
+        };
+
+        loadSkills();
+        return () => { mounted = false; };
+    }, [selectedSkillYear]);
+
     const handleRefresh = async () => {
         setIsRefreshing(true);
         try {
             await refreshJobsData();
-            const sum = await getDashboardSummary();
-            const hire = await getHiringTrends();
-            const skills = await getTopSkills();
+            const [sum, hire, years] = await Promise.all([
+                getDashboardSummary(),
+                getHiringTrends(),
+                getSkillTrendYears(),
+            ]);
+
+            const nextYear =
+                selectedSkillYear !== null && selectedSkillYear !== 'all' && years.includes(selectedSkillYear)
+                    ? selectedSkillYear
+                    : (years.length > 0 ? years[0] : 'all');
+
+            const skills = await getTopSkills(nextYear === 'all' ? undefined : nextYear);
 
             setSummary(sum);
             setHiringData(hire);
+            setSkillYears(years);
+            setSelectedSkillYear(nextYear);
             setSkillsData(skills);
             setRefreshTrigger(prev => prev + 1);
         } catch (err) {
@@ -141,15 +177,32 @@ const Overview = () => {
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                     itemStyle={{ color: '#e5e7eb' }}
+                                    labelFormatter={(label) => `Month: ${label}`}
+                                    formatter={(value) => [value, 'Job Postings']}
                                 />
-                                <Area type="monotone" dataKey="value" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
+                                <Area type="monotone" dataKey="value" name="Job Postings" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorValue)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
                 <div className="card">
-                    <h3 className="text-lg font-bold text-white mb-6">Top Skills Demand</h3>
+                    <div className="flex items-center justify-between mb-6 gap-3">
+                        <h3 className="text-lg font-bold text-white">Top Skills Demand</h3>
+                        <select
+                            className="bg-secondary border border-white/10 text-white text-sm rounded-lg px-3 py-2 appearance-none focus:outline-none focus:ring-2 focus:ring-accent/50 cursor-pointer"
+                            value={selectedSkillYear === null ? 'all' : selectedSkillYear}
+                            onChange={(e) => {
+                                const value = e.target.value;
+                                setSelectedSkillYear(value === 'all' ? 'all' : Number(value));
+                            }}
+                        >
+                            <option value="all">All years</option>
+                            {skillYears.map((year) => (
+                                <option key={year} value={year}>{year}</option>
+                            ))}
+                        </select>
+                    </div>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={skillsData}>
@@ -159,6 +212,8 @@ const Overview = () => {
                                 <Tooltip
                                     cursor={{ fill: '#ffffff05' }}
                                     contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
+                                    labelFormatter={(label) => `Skill: ${label}`}
+                                    formatter={(value) => [value, 'Demand Delta']}
                                 />
                                 <Bar dataKey="dev" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
                             </BarChart>

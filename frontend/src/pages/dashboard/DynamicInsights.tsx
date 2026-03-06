@@ -127,6 +127,8 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                                         cursor={{ fill: '#ffffff05' }}
                                         contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                         itemStyle={{ color: '#e5e7eb' }}
+                                        labelFormatter={(label) => `Role: ${label}`}
+                                        formatter={(value) => [value, 'Openings in Selected City']}
                                     />
                                     <Bar dataKey="value" name="Job Count" fill="#a855f7" radius={[4, 4, 0, 0]} />
                                 </BarChart>
@@ -166,6 +168,8 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                                         cursor={{ fill: '#ffffff05' }}
                                         contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                         itemStyle={{ color: '#e5e7eb' }}
+                                        labelFormatter={(label) => `City: ${label}`}
+                                        formatter={(value) => [value, 'Openings for Selected Role']}
                                     />
                                     <Bar dataKey="value" name="Job Count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                                 </BarChart>

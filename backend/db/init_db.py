@@ -34,7 +34,6 @@ def init_db():
     if jobs_csv_path.exists():
         try:
             jobs_df = pd.read_csv(jobs_csv_path)
-            # rename columns to be more SQL friendly
             jobs_df.columns = [c.strip().lower().replace(" ", "_").replace("-", "_") for c in jobs_df.columns]
             jobs_df.to_sql('jobs', conn, if_exists='replace', index=False)
             print(f"Loaded {len(jobs_df)} jobs into 'jobs' table.")

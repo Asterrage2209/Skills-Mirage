@@ -10,3 +10,4 @@ lxml
 numpy
 pandas
 scikit-learn
+apscheduler==3.10.4

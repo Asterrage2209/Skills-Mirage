@@ -12,10 +12,43 @@ def ask_gemini(prompt):
     try:
         client = genai.Client(api_key=api_key)
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=prompt,
         )
     except Exception as exc:
         return f"Gemini request failed: {exc}"
 
     return response.text or "No response text returned by Gemini."
+
+def generate_sql_query(user_prompt, schema_definition):
+    prompt = f"""
+    You are an AI that converts natural language to SQL queries. The queries should be safe to read-only queries against SQLite.
+    You will only respond with the SQL query and nothing else. Do not use Markdown formatting for the code block.
+
+    Given the following database schema:
+    {schema_definition}
+    
+    Translate the user's question, which may be in English or Hindi, into a valid SQLite query.
+    Return ONLY the raw SQL query.
+    
+    User Question: {user_prompt}
+    """
+    return ask_gemini(prompt)
+
+def generate_natural_response(user_prompt, sql_results, worker_profile=None):
+    prompt = f"""
+    You are an AI assistant that provides answers based on database results. You are answering a user querying job/course datasets.
+    The user's question may have been in English or Hindi. You must reply in the language they used, in a natural, helpful, and conversational tone.
+    
+    Worker Profile context (use if relevant to personalize answer):
+    {worker_profile if worker_profile else "Not provided"}
+
+    User Question:
+    {user_prompt}
+
+    Database Execution Results (JSON format):
+    {sql_results}
+
+    Provide a concise, human-friendly summary of the results. Only mention data that actually exists in the results.
+    """
+    return ask_gemini(prompt)

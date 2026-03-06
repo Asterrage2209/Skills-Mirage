@@ -177,39 +177,54 @@ const HiringTrends = () => {
 
                 <div className="card">
                     <h3 className="text-lg font-bold text-white mb-6">Sector Distribution</h3>
-                    <div className="h-[300px] w-full flex items-center justify-center">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={sectorData}
-                                    cx="40%"
-                                    cy="50%"
-                                    innerRadius={80}
-                                    outerRadius={110}
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    stroke="none"
-                                >
-                                    {sectorData.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <RechartsTooltip
-                                    contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px', color: '#fff' }}
-                                    itemStyle={{ color: '#e5e7eb' }}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
 
-                        {/* Custom Legend */}
-                        <div className="absolute right-8 top-1/2 -translate-y-1/2 flex flex-col gap-3">
+                    <div className="h-[300px] w-full flex items-center justify-between">
+
+                        {/* Pie Chart */}
+                        <div className="w-[60%] h-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Pie
+                                        data={sectorData}
+                                        cx="50%"
+                                        cy="50%"
+                                        innerRadius={80}
+                                        outerRadius={110}
+                                        paddingAngle={5}
+                                        dataKey="value"
+                                        stroke="none"
+                                    >
+                                        {sectorData.map((_, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                    </Pie>
+
+                                    <RechartsTooltip
+                                        contentStyle={{
+                                            backgroundColor: '#111827',
+                                            borderColor: '#ffffff10',
+                                            borderRadius: '8px',
+                                            color: '#fff'
+                                        }}
+                                        itemStyle={{ color: '#e5e7eb' }}
+                                    />
+                                </PieChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        {/* Legend */}
+                        <div className="flex flex-col gap-3 w-[40%] pl-4">
                             {sectorData.map((entry, index) => (
                                 <div key={entry.name} className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                                    <div
+                                        className="w-3 h-3 rounded-full"
+                                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                                    />
                                     <span className="text-sm text-textSecondary">{entry.name}</span>
                                 </div>
                             ))}
                         </div>
+
                     </div>
                 </div>
             </div>

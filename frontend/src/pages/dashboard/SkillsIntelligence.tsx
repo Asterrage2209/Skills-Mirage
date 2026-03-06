@@ -32,11 +32,11 @@ const SkillsIntelligence = () => {
                     // Adapt roles to the gap format: mockSkillGaps had 'demand' and 'supply'
                     const mappedRoles = roles.map(r => ({ name: formatSkillName(r.role), demand: r.count, supply: Math.round(r.count * (0.5 + Math.random() * 0.5)) }));
 
-                    const formatTrends = (trendsList: any[]) => trendsList.map(t => ({ ...t, name: formatSkillName(t.name) }));
+                    const formatTrends = (trendsList: any[]) => (trendsList || []).map(t => ({ ...t, name: formatSkillName(t.name) }));
 
                     setRolesData(mappedRoles);
-                    setRisingData(formatTrends(trends.rising));
-                    setDecliningData(formatTrends(trends.declining));
+                    setRisingData(formatTrends(trends.rising_skills));
+                    setDecliningData(formatTrends(trends.declining_skills));
                     setLoading(false);
                 }
             } catch (err) {
@@ -66,16 +66,20 @@ const SkillsIntelligence = () => {
                         <Zap className="w-5 h-5 text-accent" />
                         <h3 className="text-lg font-bold text-white">Top Rising Skills</h3>
                     </div>
-                    <div className="space-y-4">
-                        {risingData.map((skill, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                                <div className="font-medium text-white break-words max-w-[70%]">{skill.name}</div>
-                                <div className="flex items-center gap-1 text-green-400 bg-green-400/10 px-2 py-1 rounded-md text-sm font-semibold shrink-0">
-                                    <ArrowUpRight className="w-4 h-4" /> {skill.growth}
+                    {risingData.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">No skill trend data available</div>
+                    ) : (
+                        <div className="space-y-4">
+                            {risingData.map((skill, i) => (
+                                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                    <div className="font-medium text-white break-words max-w-[70%]">{skill.name}</div>
+                                    <div className="flex items-center gap-1 text-green-400 bg-green-400/10 px-2 py-1 rounded-md text-sm font-semibold shrink-0">
+                                        <ArrowUpRight className="w-4 h-4" /> {skill.growth}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 {/* Declining Skills list */}
@@ -84,16 +88,20 @@ const SkillsIntelligence = () => {
                         <ArrowDownRight className="w-5 h-5 text-red-500" />
                         <h3 className="text-lg font-bold text-white">Top Declining Skills</h3>
                     </div>
-                    <div className="space-y-4">
-                        {decliningData.map((skill, i) => (
-                            <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                                <div className="font-medium text-textSecondary break-words max-w-[70%]">{skill.name}</div>
-                                <div className="flex items-center gap-1 text-red-400 bg-red-400/10 px-2 py-1 rounded-md text-sm font-semibold shrink-0">
-                                    <ArrowDownRight className="w-4 h-4" /> {skill.decline}
+                    {decliningData.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500">No skill trend data available</div>
+                    ) : (
+                        <div className="space-y-4">
+                            {decliningData.map((skill, i) => (
+                                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
+                                    <div className="font-medium text-textSecondary break-words max-w-[70%]">{skill.name}</div>
+                                    <div className="flex items-center gap-1 text-red-400 bg-red-400/10 px-2 py-1 rounded-md text-sm font-semibold shrink-0">
+                                        <ArrowDownRight className="w-4 h-4" /> {skill.decline}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 

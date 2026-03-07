@@ -38,10 +38,16 @@ const SkillsIntelligence = () => {
                 if (mounted) {
                     const formatTrends = (trendsList: any[]) => (trendsList || []).map(t => ({ ...t, name: formatSkillName(t.name) }));
 
-                    const formattedGaps = gaps.map((g: any) => ({
-                        ...g,
-                        name: formatSkillName(g.skill)
-                    }));
+                    const formattedGaps = gaps
+                        .filter((g: any) => g.training_supply > 0)
+                        .map((g: any) => ({
+                            ...g,
+                            name: formatSkillName(g.skill),
+                            // Optional: applying a scaling factor just for visualization so the training_supply bar is visible next to high demand
+                            visualization_supply: g.training_supply * 10 
+                        }))
+                        .sort((a: any, b: any) => b.market_demand - a.market_demand)
+                        .slice(0, 10);
 
                     setGapData(formattedGaps);
                     setRisingData(formatTrends(trends.rising_skills));
@@ -151,7 +157,7 @@ const SkillsIntelligence = () => {
                                     formatter={(value, _name, props) => [value, props.payload.skill]}
                                 />
                                 <Bar dataKey="market_demand" name="Market Demand" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                                <Bar dataKey="training_supply" name="Training Supply" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="visualization_supply" name="Training Supply Index" fill="#a855f7" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>

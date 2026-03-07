@@ -3,6 +3,28 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { getTopCities, getTopRoles, getRoleDistribution, getCitySpread } from '../../services/jobAnalytics';
 import { MapPin, Briefcase } from 'lucide-react';
 
+const CustomTick = (props: any) => {
+    const { x, y, payload } = props;
+    const value = payload.value || "";
+    const truncated = value.length > 15 ? value.substring(0, 15) + "..." : value;
+
+    return (
+        <g transform={`translate(${x},${y})`}>
+            <text
+                x={0}
+                y={0}
+                dy={16}
+                textAnchor="end"
+                fill="#9ca3af"
+                fontSize={12}
+                transform="rotate(-90)"
+            >
+                {truncated}
+            </text>
+        </g>
+    );
+};
+
 const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) => {
     // Dropdown options
     const [cities, setCities] = useState<any[]>([]);
@@ -119,7 +141,7 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                             <div className="w-full h-full flex items-center justify-center text-gray-500">No roles found for this city.</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={roleDistribution} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
+                                <BarChart data={roleDistribution} margin={{ top: 20, right: 20, left: 0, bottom: 85 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                                     <XAxis
                                         dataKey="name"
@@ -127,7 +149,8 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                                         fontSize={11}
                                         tickLine={false}
                                         axisLine={false}
-                                        tick={false}
+                                        interval={0}
+                                        tick={<CustomTick />}
                                     />
                                     <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                     <RechartsTooltip
@@ -167,7 +190,7 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                             <div className="w-full h-full flex items-center justify-center text-gray-500">No cities found for this role.</div>
                         ) : (
                             <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={citySpread} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
+                                <BarChart data={citySpread} margin={{ top: 20, right: 20, left: 0, bottom: 85 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                                     <XAxis
                                         dataKey="name"
@@ -175,7 +198,8 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                                         fontSize={11}
                                         tickLine={false}
                                         axisLine={false}
-                                        tick={false}
+                                        interval={0}
+                                        tick={<CustomTick />}
                                     />
                                     <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                     <RechartsTooltip

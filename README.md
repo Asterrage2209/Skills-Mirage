@@ -93,12 +93,6 @@ The React application will run locally at `http://localhost:5173`.
 
 ---
 
-## 🎥 Demo Video
-
-[Click here to watch the Demo Video placeholder](https://youtube.com) *(Demo placeholder)*
-
----
-
 ## 🏆 Hackathon Credits
 
 **This project is meant for the Hack A Mined hackathon and was developed by 5 teammates:**

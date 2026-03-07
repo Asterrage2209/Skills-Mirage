@@ -88,7 +88,7 @@ def compute_skill_gap():
             "gap": gap
         })
         
-    # Sort strictly by market demand representing true opportunity targets
-    gap_metrics = sorted(gap_metrics, key=lambda x: x["market_demand"], reverse=True)
+    # Sort strictly by highest demand gap
+    gap_metrics = sorted(gap_metrics, key=lambda x: x["gap"], reverse=True)
     
-    return gap_metrics[:100]
+    return gap_metrics[:10]

@@ -3,9 +3,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { getTopCities, getTopRoles, getRoleDistribution, getCitySpread } from '../../services/jobAnalytics';
 import { MapPin, Briefcase } from 'lucide-react';
 
-const truncateLabel = (label: string) =>
-    label.length > 15 ? label.slice(0, 15) + "..." : label;
-
 const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) => {
     // Dropdown options
     const [cities, setCities] = useState<any[]>([]);
@@ -130,11 +127,7 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                                         fontSize={11}
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={truncateLabel}
-                                        angle={-90}
-                                        textAnchor="end"
-                                        interval={0}
-                                        height={120}
+                                        tick={false}
                                     />
                                     <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                     <RechartsTooltip
@@ -142,7 +135,7 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                                         contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                         itemStyle={{ color: '#e5e7eb' }}
                                         labelFormatter={(label) => `Role: ${label}`}
-                                        formatter={(value, name) => [value, name]}
+                                        formatter={(value, _name, props) => [value, props.payload.name]}
                                     />
                                     <Bar dataKey="value" name="Job Count" fill="#a855f7" radius={[4, 4, 0, 0]} />
                                 </BarChart>
@@ -182,11 +175,7 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                                         fontSize={11}
                                         tickLine={false}
                                         axisLine={false}
-                                        tickFormatter={truncateLabel}
-                                        angle={-90}
-                                        textAnchor="end"
-                                        interval={0}
-                                        height={120}
+                                        tick={false}
                                     />
                                     <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                     <RechartsTooltip
@@ -194,7 +183,7 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                                         contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                         itemStyle={{ color: '#e5e7eb' }}
                                         labelFormatter={(label) => `City: ${label}`}
-                                        formatter={(value, name) => [value, name]}
+                                        formatter={(value, _name, props) => [value, props.payload.name]}
                                     />
                                     <Bar dataKey="value" name="Job Count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                                 </BarChart>

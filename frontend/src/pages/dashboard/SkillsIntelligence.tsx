@@ -15,6 +15,11 @@ const formatSkillName = (name: string) => {
         .join(' ');
 };
 
+const truncateLabel = (label: string) => {
+    if (!label) return "";
+    return label.length > 12 ? label.substring(0, 12) + "..." : label;
+};
+
 // Removed CustomTick as YAxis is now used for categories with width
 
 const SkillsIntelligence = () => {
@@ -128,6 +133,9 @@ const SkillsIntelligence = () => {
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
+                                    tickFormatter={(value) => truncateLabel(value)}
+                                    interval={0}
+                                    height={80}
                                 />
                                 <YAxis
                                     type="number"
@@ -140,6 +148,7 @@ const SkillsIntelligence = () => {
                                     cursor={{ fill: '#ffffff05' }}
                                     contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                     itemStyle={{ color: '#e5e7eb' }}
+                                    formatter={(value, _name, props) => [value, props.payload.skill]}
                                 />
                                 <Bar dataKey="market_demand" name="Market Demand" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                                 <Bar dataKey="training_supply" name="Training Supply" fill="#a855f7" radius={[4, 4, 0, 0]} />

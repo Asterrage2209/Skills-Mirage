@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, Briefcase, MapPin, Search, Layers, Info } from 'lucide-react';
-import { analyzeWorkerApi, getWorkerProfileApi, WorkerAnalyzeResponse } from '../../services/api';
+import { User, Briefcase, MapPin, Search, Layers, Info, Sparkles, TrendingUp, ShieldAlert, ShieldCheck, ArrowRightCircle } from 'lucide-react';
+import { analyzeWorkerApi, getWorkerProfileApi, WorkerAnalyzeResponse, GeminiAnalysis } from '../../services/api';
 
 type FormState = {
   title: string;
@@ -8,6 +8,12 @@ type FormState = {
   experience: string;
   description: string;
   skills: string;
+};
+
+const riskLevelConfig: Record<string, { color: string; bg: string; border: string; icon: typeof ShieldAlert }> = {
+  high: { color: 'text-red-400', bg: 'from-card to-red-500/10', border: 'border-red-500/30', icon: ShieldAlert },
+  moderate: { color: 'text-yellow-400', bg: 'from-card to-yellow-500/10', border: 'border-yellow-500/30', icon: TrendingUp },
+  low: { color: 'text-emerald-400', bg: 'from-card to-emerald-500/10', border: 'border-emerald-500/30', icon: ShieldCheck },
 };
 
 const WorkerIntelligence = () => {
@@ -27,6 +33,7 @@ const WorkerIntelligence = () => {
   const [results, setResults] = useState<WorkerAnalyzeResponse | null>(null);
   const [riskScore, setRiskScore] = useState<number | null>(null);
   const [aiVulnerability, setAiVulnerability] = useState<number | null>(null);
+  const [geminiAnalysis, setGeminiAnalysis] = useState<GeminiAnalysis | null>(null);
 
   // Persist form state to localStorage
   useEffect(() => {
@@ -53,6 +60,9 @@ const WorkerIntelligence = () => {
         if (profile.ai_vulnerability !== null && profile.ai_vulnerability !== undefined) {
           setAiVulnerability(profile.ai_vulnerability);
         }
+        if (profile.gemini_analysis) {
+          setGeminiAnalysis(profile.gemini_analysis);
+        }
 
         if (profile.reskilling_path) {
           setResults({
@@ -64,7 +74,8 @@ const WorkerIntelligence = () => {
             },
             risk_score: profile.risk_score || 0,
             ai_vulnerability: profile.ai_vulnerability || 0,
-            reskilling_path: profile.reskilling_path
+            reskilling_path: profile.reskilling_path,
+            gemini_analysis: profile.gemini_analysis || null,
           });
         }
       } catch (err) {
@@ -92,12 +103,17 @@ const WorkerIntelligence = () => {
       setResults(res);
       setRiskScore(res.risk_score);
       setAiVulnerability(res.ai_vulnerability);
+      setGeminiAnalysis(res.gemini_analysis || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze worker profile');
     } finally {
       setLoading(false);
     }
   };
+
+  const riskLevel = geminiAnalysis?.risk_level || 'unknown';
+  const cfg = riskLevelConfig[riskLevel] || riskLevelConfig.moderate;
+  const RiskIcon = cfg.icon;
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -191,8 +207,81 @@ const WorkerIntelligence = () => {
         </div>
 
         <div className="space-y-6">
-          {(results || riskScore !== null) ? (
+          {(results || riskScore !== null || geminiAnalysis) ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+
+              {/* ── Gemini AI Analysis Card ──────────────────────────────── */}
+              {geminiAnalysis && (
+                <div className={`card ${cfg.border} bg-gradient-to-b ${cfg.bg}`}>
+                  <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-4">
+                    <Sparkles className="w-5 h-5 text-purple-400" />
+                    <h3 className="text-lg font-bold text-white">AI Risk Assessment</h3>
+                    <span className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.color} bg-white/5 border ${cfg.border}`}>
+                      <RiskIcon className="w-3.5 h-3.5" />
+                      {riskLevel.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {geminiAnalysis.risk_score !== null && (
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-sm font-bold text-textSecondary">Gemini Risk Score</h3>
+                      <div className={`text-2xl font-black ${cfg.color}`}>
+                        {Math.round(geminiAnalysis.risk_score)}
+                        <span className="text-sm text-textSecondary font-normal">/100</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mb-4">
+                    <div
+                      className={`h-full rounded-full transition-all duration-700 ${riskLevel === 'high' ? 'bg-red-500' : riskLevel === 'moderate' ? 'bg-yellow-500' : 'bg-emerald-500'
+                        }`}
+                      style={{ width: `${Math.min(100, Math.max(0, geminiAnalysis.risk_score ?? 0))}%` }}
+                    />
+                  </div>
+
+                  {geminiAnalysis.explanation && (
+                    <p className="text-textSecondary text-sm leading-relaxed">{geminiAnalysis.explanation}</p>
+                  )}
+                </div>
+              )}
+
+              {/* ── Pivot Roles (shown when risk is high) ────────────────── */}
+              {geminiAnalysis && geminiAnalysis.pivot_roles && geminiAnalysis.pivot_roles.length > 0 && (
+                <div className="card">
+                  <div className="flex items-center gap-2 mb-4">
+                    <ArrowRightCircle className="w-5 h-5 text-accent" />
+                    <h3 className="text-lg font-bold text-white">Suggested Pivot Roles</h3>
+                  </div>
+                  <div className="space-y-2">
+                    {geminiAnalysis.pivot_roles.map((role, i) => (
+                      <div key={i} className="p-3 bg-secondary rounded-xl border border-white/5 flex items-center gap-3">
+                        <span className="flex-shrink-0 w-7 h-7 rounded-full bg-accent/20 text-accent flex items-center justify-center text-xs font-bold">{i + 1}</span>
+                        <span className="font-semibold text-white text-sm">{role}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── New Skills to Learn (shown when risk moderate or high) ─ */}
+              {geminiAnalysis && geminiAnalysis.new_skills && geminiAnalysis.new_skills.length > 0 && (
+                <div className="card">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                    <h3 className="text-lg font-bold text-white">Recommended New Skills</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {geminiAnalysis.new_skills.map((skill, i) => (
+                      <span key={i} className="px-3 py-1.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── Local Engine Risk Score ───────────────────────────────── */}
               <div className="card border-red-500/30 bg-gradient-to-b from-card to-red-500/5">
                 <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
                   <h3 className="text-lg font-bold text-white">AI Vulnerability Index</h3>

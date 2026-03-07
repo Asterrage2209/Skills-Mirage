@@ -6,6 +6,7 @@ from utils.jwt_handler import get_current_user
 from worker_engine.worker_parser import parse_worker_profile
 from worker_engine.risk_score import compute_worker_risk
 from worker_engine.reskilling_engine import generate_reskilling_path
+from worker_engine.worker_gemini import analyze_worker as gemini_analyze_worker
 from intelligence.vulnerability_index import compute_vulnerability_index
 import logging
 
@@ -29,7 +30,8 @@ def get_worker_profile(current_user: dict = Depends(get_current_user)):
         "skills": current_user.get("skills", []),
         "risk_score": current_user.get("risk_score"),
         "ai_vulnerability": current_user.get("ai_vulnerability"),
-        "reskilling_path": current_user.get("reskilling_path")
+        "reskilling_path": current_user.get("reskilling_path"),
+        "gemini_analysis": current_user.get("gemini_analysis"),
     }
 
 @router.post("/profile")
@@ -56,11 +58,20 @@ def update_worker_profile(profile: WorkerProfile, current_user: dict = Depends(g
     risk = compute_worker_risk(parsed)
     path = generate_reskilling_path(parsed)
 
+    # Call Gemini for AI-powered worker analysis
+    gemini_analysis = gemini_analyze_worker(
+        job_title=profile.job_role,
+        city=profile.city,
+        experience=profile.years_of_experience,
+        skills=profile.skills if profile.skills else parsed.get("skills", []),
+    )
+
     logging.info("Worker profile update called")
     logging.info(f"user_id: {current_user['_id']}")
     logging.info(f"job_role: {profile.job_role}")
     logging.info(f"risk_score: {risk}")
     logging.info(f"ai_vulnerability: {ai_vulnerability}")
+    logging.info(f"gemini_risk_score: {gemini_analysis.get('risk_score')}")
 
     # Save to MongoDB Native Document securely overriding previous iterations synchronously.
     users_collection.update_one(
@@ -73,7 +84,8 @@ def update_worker_profile(profile: WorkerProfile, current_user: dict = Depends(g
             "skills": parsed.get("skills", []),
             "risk_score": risk,
             "ai_vulnerability": ai_vulnerability,
-            "reskilling_path": path
+            "reskilling_path": path,
+            "gemini_analysis": gemini_analysis,
         }}
     )
     logging.info("Mongo profile update successful")
@@ -83,4 +95,5 @@ def update_worker_profile(profile: WorkerProfile, current_user: dict = Depends(g
         "risk_score": risk,
         "ai_vulnerability": ai_vulnerability,
         "reskilling_path": path,
+        "gemini_analysis": gemini_analysis,
     }

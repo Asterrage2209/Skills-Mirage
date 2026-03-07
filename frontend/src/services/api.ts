@@ -122,6 +122,15 @@ export type WorkerAnalyzePayload = {
   skills: string[];
 };
 
+export type GeminiAnalysis = {
+  risk_score: number | null;
+  risk_level: string;
+  pivot_roles: string[];
+  new_skills: string[];
+  explanation: string;
+  raw_response: string;
+};
+
 export type WorkerProfileResponse = {
   job_role: string | null;
   city: string | null;
@@ -134,7 +143,8 @@ export type WorkerProfileResponse = {
     target_role: string;
     plan: string[];
   } | null;
-}
+  gemini_analysis: GeminiAnalysis | null;
+};
 
 export async function getWorkerProfileApi(): Promise<WorkerProfileResponse> {
   const res = await fetchWithAuth(`${API_BASE}/worker/profile`);
@@ -154,6 +164,7 @@ export type WorkerAnalyzeResponse = {
     target_role: string;
     plan: string[];
   };
+  gemini_analysis: GeminiAnalysis | null;
 };
 
 export async function analyzeWorkerApi(data: WorkerAnalyzePayload): Promise<WorkerAnalyzeResponse> {

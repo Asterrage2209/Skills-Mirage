@@ -30,6 +30,8 @@ The system runs on a decoupled client-server architecture:
 3. **Database (MongoDB):** Securely stores user profiles, authentication tokens, and historical AI worker risk assessments.
 4. **AI Pipeline:** Evaluates worker vulnerability using Google GenAI models, parsing structured job history to determine the immediate automation risk.
 
+   <img width="1408" height="768" alt="Architecture Diagram" src="https://github.com/user-attachments/assets/0efc0c40-5f25-465f-90c0-2c9ad5ceb6f0" />
+
 ---
 
 ## 🚀 Setup Instructions

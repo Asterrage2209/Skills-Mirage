@@ -119,21 +119,18 @@ const SkillsIntelligence = () => {
                 <div className="overflow-x-auto overflow-y-hidden custom-scrollbar pb-4 rounded-lg">
                     <div className="h-[400px] min-w-[2000px] bg-secondary/30 rounded-lg p-4">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={gapData} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
+                            <BarChart data={gapData} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
                                 <XAxis
-                                    type="number"
+                                    dataKey="name"
+                                    type="category"
                                     stroke="#9ca3af"
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
                                 />
                                 <YAxis
-                                    dataKey="name"
-                                    type="category"
-                                    width={150}
-                                    tick={{ dx: 0 }}
-                                    padding={{ top: 0, bottom: 0 }}
+                                    type="number"
                                     stroke="#9ca3af"
                                     fontSize={12}
                                     tickLine={false}

@@ -53,11 +53,11 @@ def update_worker_profile(profile: WorkerProfile, current_user: dict = Depends(g
     if profile.skills:
         parsed["skills"] = list(set(parsed.get("skills", []) + profile.skills))
 
-    # Calculate actual risk from worker engine
-    vulnerability_data = compute_vulnerability_index()
-    ai_vulnerability = vulnerability_data["role_risks"].get(parsed.get("role", "").lower(), 50)
-    risk = compute_worker_risk(parsed)
-    path = generate_reskilling_path(parsed)
+    # Remove old mathematical risk computation
+    # vulnerability_data = compute_vulnerability_index()
+    # ai_vulnerability = vulnerability_data["role_risks"].get(parsed.get("role", "").lower(), 50)
+    # risk = compute_worker_risk(parsed)
+    # path = generate_reskilling_path(parsed)
 
     # Call Gemini for AI-powered worker analysis
     gemini_analysis = gemini_analyze_worker(
@@ -73,6 +73,13 @@ def update_worker_profile(profile: WorkerProfile, current_user: dict = Depends(g
     logging.info(f"gemini_risk_score: {gemini_analysis.get('risk_score')}")
 
     # Save to MongoDB
+    # Ensure Gemini score is the single source of truth
+    gemini_score = gemini_analysis.get("risk_score") if gemini_analysis else None
+
+    # Sync gemini analysis interior fields exactly with storage fields
+    if gemini_analysis and gemini_score is not None:
+        gemini_analysis["risk_score"] = gemini_score
+
     users_collection.update_one(
         {"email": current_user["email"]},
         {"$set": {
@@ -83,7 +90,8 @@ def update_worker_profile(profile: WorkerProfile, current_user: dict = Depends(g
             "years_experience": profile.years_of_experience,
             "role_description": profile.role_description,
             "skills": profile.skills if profile.skills else parsed.get("skills", []),
-            "gemini_risk_score": gemini_analysis.get("risk_score") if gemini_analysis else None,
+            "gemini_risk_score": gemini_score,
+            "gemini_analysis": gemini_analysis,
             "reasoning": gemini_analysis.get("explanation") if gemini_analysis else None,
             "updated_at": datetime.utcnow()
         }},

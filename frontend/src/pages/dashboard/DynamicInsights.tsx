@@ -3,6 +3,9 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
 import { getTopCities, getTopRoles, getRoleDistribution, getCitySpread } from '../../services/jobAnalytics';
 import { MapPin, Briefcase } from 'lucide-react';
 
+const truncateLabel = (label: string) =>
+    label.length > 15 ? label.slice(0, 15) + "..." : label;
+
 const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) => {
     // Dropdown options
     const [cities, setCities] = useState<any[]>([]);
@@ -121,14 +124,25 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={roleDistribution} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => val.length > 10 ? val.substring(0, 10) + '...' : val} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#9ca3af"
+                                        fontSize={11}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={truncateLabel}
+                                        angle={-90}
+                                        textAnchor="end"
+                                        interval={0}
+                                        height={120}
+                                    />
                                     <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                     <RechartsTooltip
                                         cursor={{ fill: '#ffffff05' }}
                                         contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                         itemStyle={{ color: '#e5e7eb' }}
                                         labelFormatter={(label) => `Role: ${label}`}
-                                        formatter={(value) => [value, 'Openings in Selected City']}
+                                        formatter={(value, name) => [value, name]}
                                     />
                                     <Bar dataKey="value" name="Job Count" fill="#a855f7" radius={[4, 4, 0, 0]} />
                                 </BarChart>
@@ -162,14 +176,25 @@ const DynamicInsights = ({ refreshTrigger = 0 }: { refreshTrigger?: number }) =>
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={citySpread} margin={{ top: 20, right: 20, left: 0, bottom: 20 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                                    <XAxis dataKey="name" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => val.length > 10 ? val.substring(0, 10) + '...' : val} />
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#9ca3af"
+                                        fontSize={11}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickFormatter={truncateLabel}
+                                        angle={-90}
+                                        textAnchor="end"
+                                        interval={0}
+                                        height={120}
+                                    />
                                     <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                     <RechartsTooltip
                                         cursor={{ fill: '#ffffff05' }}
                                         contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                         itemStyle={{ color: '#e5e7eb' }}
                                         labelFormatter={(label) => `City: ${label}`}
-                                        formatter={(value) => [value, 'Openings for Selected Role']}
+                                        formatter={(value, name) => [value, name]}
                                     />
                                     <Bar dataKey="value" name="Job Count" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                                 </BarChart>

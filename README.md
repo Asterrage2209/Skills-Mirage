@@ -102,8 +102,8 @@ The React application will run locally at `http://localhost:5173`.
 ## 🏆 Hackathon Credits
 
 **This project is meant for the Hack A Mined hackathon and was developed by 5 teammates:**
-- Advait
-- Harsh
-- Jemil
-- Shivam
-- Ketav
+- Advait Pandya
+- Harsh Shah 
+- Jemil Patel
+- Shivam Jhaveri
+- Ketav Shah

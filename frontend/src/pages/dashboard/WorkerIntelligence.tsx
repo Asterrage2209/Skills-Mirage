@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Briefcase, MapPin, Search, Layers, Sparkles, TrendingUp, ShieldAlert, ShieldCheck, ArrowRightCircle, Info } from 'lucide-react';
+import { User, Briefcase, MapPin, Search, Layers, Sparkles, TrendingUp, ShieldAlert, ShieldCheck, ArrowRightCircle, Info, X } from 'lucide-react';
 import { analyzeWorkerApi, getWorkerProfileApi, GeminiAnalysis } from '../../services/api';
 
 type FormState = {
@@ -31,6 +31,7 @@ const WorkerIntelligence = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [geminiAnalysis, setGeminiAnalysis] = useState<GeminiAnalysis | null>(null);
+  const [dismissAlert, setDismissAlert] = useState(false);
 
   // Persist form state to localStorage
   useEffect(() => {
@@ -94,6 +95,25 @@ const WorkerIntelligence = () => {
         <h1 className="text-2xl font-bold text-white mb-1">Worker Analysis</h1>
         <p className="text-textSecondary text-sm">Input profile details to generate AI risk assessment and reskilling path.</p>
       </div>
+
+      {/* Global Warning Banner */}
+      {geminiAnalysis && geminiAnalysis.risk_score !== null && geminiAnalysis.risk_score > 85 && !dismissAlert && (
+        <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-start gap-4 mb-8">
+          <ShieldAlert className="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <h3 className="text-red-500 font-bold mb-1">⚠ High AI Automation Risk Detected</h3>
+            <p className="text-red-400/90 text-sm">
+              Your current role has a very high automation risk score. Consider reskilling or exploring alternative career paths.
+            </p>
+          </div>
+          <button
+            onClick={() => setDismissAlert(true)}
+            className="text-red-400 hover:text-red-300 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="card">

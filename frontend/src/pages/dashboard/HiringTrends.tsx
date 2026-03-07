@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import {
     LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
-    BarChart, Bar, PieChart, Pie, Cell
+    BarChart, Bar
 } from 'recharts';
-import { getHiringTrends, getTopCities, getIndustryDistribution } from '../../services/jobAnalytics';
-
-const COLORS = ['#3b82f6', '#8b5cf6', '#10b981', '#f43f5e', '#facc15'];
+import { getHiringTrends, getTopCities } from '../../services/jobAnalytics';
 
 const formatCityName = (city: string) => {
     if (!city) return '';
@@ -19,7 +17,6 @@ const HiringTrends = () => {
 
     const [trendData, setTrendData] = useState<any[]>([]);
     const [cityData, setCityData] = useState<any[]>([]);
-    const [sectorData, setSectorData] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -29,7 +26,6 @@ const HiringTrends = () => {
                 // In a real app we would pass `timeRange` and `city` to filtering
                 const trends = await getHiringTrends();
                 const cities = await getTopCities();
-                const sectors = await getIndustryDistribution();
 
                 if (mounted) {
                     // Adapt the trends to include 'active' if needed, or just map 'value' to 'jobs'
@@ -40,7 +36,6 @@ const HiringTrends = () => {
 
                     setTrendData(mappedTrends);
                     setCityData(displayCities);
-                    setSectorData(sectors);
                     setLoading(false);
                 }
             } catch (err) {
@@ -94,79 +89,23 @@ const HiringTrends = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="card">
-                    <h3 className="text-lg font-bold text-white mb-6">City Demand Comparison</h3>
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={cityData} layout="vertical" margin={{ left: 20 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
-                                <XAxis type="number" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
-                                <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} width={85} />
-                                <RechartsTooltip
-                                    cursor={{ fill: '#ffffff05' }}
-                                    contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
-                                    labelFormatter={(label) => `City: ${label}`}
-                                    formatter={(value) => [value, 'Job Demand']}
-                                />
-                                <Bar dataKey="demand" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                <div className="card">
-                    <h3 className="text-lg font-bold text-white mb-6">Sector Distribution</h3>
-
-                    <div className="h-[300px] w-full flex items-center justify-between">
-
-                        {/* Pie Chart */}
-                        <div className="w-[60%] h-full">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <PieChart>
-                                    <Pie
-                                        data={sectorData}
-                                        cx="50%"
-                                        cy="50%"
-                                        innerRadius={80}
-                                        outerRadius={110}
-                                        paddingAngle={5}
-                                        dataKey="value"
-                                        stroke="none"
-                                    >
-                                        {sectorData.map((_, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Pie>
-
-                                    <RechartsTooltip
-                                        contentStyle={{
-                                            backgroundColor: '#111827',
-                                            borderColor: '#ffffff10',
-                                            borderRadius: '8px',
-                                            color: '#fff'
-                                        }}
-                                        itemStyle={{ color: '#e5e7eb' }}
-                                        formatter={(value) => [value, 'Sector Job Share']}
-                                    />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </div>
-
-                        {/* Legend */}
-                        <div className="flex flex-col gap-3 w-[40%] pl-4">
-                            {sectorData.map((entry, index) => (
-                                <div key={entry.name} className="flex items-center gap-2">
-                                    <div
-                                        className="w-3 h-3 rounded-full"
-                                        style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                                    />
-                                    <span className="text-sm text-textSecondary">{entry.name}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                    </div>
+            <div className="card mb-6">
+                <h3 className="text-lg font-bold text-white mb-6">City Demand Comparison</h3>
+                <div className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={cityData} layout="vertical" margin={{ left: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
+                            <XAxis type="number" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} />
+                            <YAxis dataKey="name" type="category" stroke="#9ca3af" fontSize={11} tickLine={false} axisLine={false} width={85} />
+                            <RechartsTooltip
+                                cursor={{ fill: '#ffffff05' }}
+                                contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
+                                labelFormatter={(label) => `City: ${label}`}
+                                formatter={(value) => [value, 'Job Demand']}
+                            />
+                            <Bar dataKey="demand" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24} />
+                        </BarChart>
+                    </ResponsiveContainer>
                 </div>
             </div>
         </div>

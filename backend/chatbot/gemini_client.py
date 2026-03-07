@@ -38,7 +38,7 @@ def generate_sql_query(user_prompt, schema_definition):
 def generate_natural_response(user_prompt, sql_results, worker_profile=None):
     prompt = f"""
     You are an AI assistant that provides answers based on database results. You are answering a user querying job/course datasets.
-    The user's question may have been in English or Hindi. You must reply in the language they used, in a natural, helpful, and conversational tone.
+    Respond in a natural, helpful, and conversational tone.
     
     Worker Profile context (use if relevant to personalize answer):
     {worker_profile if worker_profile else "Not provided"}
@@ -50,5 +50,10 @@ def generate_natural_response(user_prompt, sql_results, worker_profile=None):
     {sql_results}
 
     Provide a concise, human-friendly summary of the results. Only mention data that actually exists in the results.
+
+    LANGUAGE RULE (MANDATORY): Detect the language of the User Question above. Your ENTIRE response MUST be written in that SAME language.
+    - If the user wrote in English → reply ONLY in English.
+    - If the user wrote in Hindi → reply ONLY in Hindi.
+    Do NOT mix languages. Do NOT switch languages mid-response.
     """
     return ask_gemini(prompt)

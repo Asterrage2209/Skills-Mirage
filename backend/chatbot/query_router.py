@@ -85,7 +85,7 @@ def _handle_risk_explanation(question: str, user_data: dict) -> str:
 
     prompt = f"""You are a career guidance AI assistant. The user is asking about their AI-risk score.
 Answer their question using ONLY the analysis data provided below. Be specific, reference their actual score
-and factors. Respond in the same language the user used (English or Hindi). Be empathetic and helpful.
+and factors. Be empathetic and helpful.
 
 --- Analysis Data ---
 {context}
@@ -93,7 +93,12 @@ and factors. Respond in the same language the user used (English or Hindi). Be e
 --- User Question ---
 {question}
 
-Provide a clear, structured explanation. Do NOT say "I don't know" — use the data above."""
+Provide a clear, structured explanation. Do NOT say "I don't know" — use the data above.
+
+LANGUAGE RULE (MANDATORY): Detect the language of the User Question above. Your ENTIRE response MUST be written in that SAME language.
+- If the user wrote in English → reply ONLY in English.
+- If the user wrote in Hindi → reply ONLY in Hindi.
+Do NOT mix languages. Do NOT switch languages mid-response."""
 
     return ask_gemini(prompt)
 
@@ -136,7 +141,7 @@ def _handle_improvement_guidance(question: str, user_data: dict) -> str:
 
     prompt = f"""You are a career guidance AI assistant. The user is asking for improvement advice or career direction.
 Answer using ONLY the analysis and reskilling data provided below. Be specific — mention actual skills, courses,
-jobs, and learning timelines from the data. Respond in the same language the user used (English or Hindi).
+jobs, and learning timelines from the data.
 
 --- User Profile ---
 Job role: {job_role}
@@ -152,7 +157,12 @@ Skills: {', '.join(user_data.get('skills', []))}
 {question}
 
 Provide actionable, structured guidance. Include specific skill names, course names, and job titles from the data.
-Do NOT say "I don't know" — use whatever data is available above."""
+Do NOT say "I don't know" — use whatever data is available above.
+
+LANGUAGE RULE (MANDATORY): Detect the language of the User Question above. Your ENTIRE response MUST be written in that SAME language.
+- If the user wrote in English → reply ONLY in English.
+- If the user wrote in Hindi → reply ONLY in Hindi.
+Do NOT mix languages. Do NOT switch languages mid-response."""
 
     return ask_gemini(prompt)
 

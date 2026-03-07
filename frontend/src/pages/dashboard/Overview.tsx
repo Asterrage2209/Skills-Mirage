@@ -21,6 +21,28 @@ const formatDisplayName = (name: string) => {
         .join(' ');
 };
 
+const CustomOverviewTick = (props: any) => {
+    const { x, y, payload } = props;
+    const value = payload.value || "";
+    const truncated = value.length > 15 ? value.substring(0, 15) + "..." : value;
+
+    return (
+        <g transform={`translate(${x},${y})`}>
+            <text
+                x={0}
+                y={0}
+                dy={16}
+                textAnchor="end"
+                fill="#9ca3af"
+                fontSize={12}
+                transform="rotate(-90)"
+            >
+                {truncated}
+            </text>
+        </g>
+    );
+};
+
 const StatCard = ({ title, value, trend, trendValue, icon: Icon, color }: any) => {
     const isUp = trend === 'up';
 
@@ -205,15 +227,23 @@ const Overview = () => {
                     </div>
                     <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={skillsData}>
+                            <BarChart data={skillsData} margin={{ bottom: 85 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
-                                <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                                <XAxis
+                                    dataKey="name"
+                                    stroke="#9ca3af"
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    interval={0}
+                                    tick={<CustomOverviewTick />}
+                                />
                                 <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
                                 <Tooltip
                                     cursor={{ fill: '#ffffff05' }}
                                     contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}
                                     labelFormatter={(label) => `Skill: ${label}`}
-                                    formatter={(value) => [value, 'Demand Delta']}
+                                    formatter={(value, _name, props) => [value, props.payload.name]}
                                 />
                                 <Bar dataKey="dev" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
                             </BarChart>

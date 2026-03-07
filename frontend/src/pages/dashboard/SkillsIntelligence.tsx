@@ -15,28 +15,7 @@ const formatSkillName = (name: string) => {
         .join(' ');
 };
 
-const CustomTick = (props: any) => {
-    const { x, y, payload } = props;
-    const value = payload.value || "";
-    const truncated = value.length > 12 ? value.substring(0, 12) + "..." : value;
-
-    return (
-        <g transform={`translate(${x},${y})`}>
-            <title>{value}</title>
-            <text
-                x={0}
-                y={0}
-                dy={16}
-                textAnchor="end"
-                fill="#9ca3af"
-                fontSize={12}
-                transform="rotate(-90)"
-            >
-                {truncated}
-            </text>
-        </g>
-    );
-};
+// Removed CustomTick as YAxis is now used for categories with width
 
 const SkillsIntelligence = () => {
     const [gapData, setGapData] = useState<any[]>([]);
@@ -140,18 +119,26 @@ const SkillsIntelligence = () => {
                 <div className="overflow-x-auto overflow-y-hidden custom-scrollbar pb-4 rounded-lg">
                     <div className="h-[400px] min-w-[2000px] bg-secondary/30 rounded-lg p-4">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={gapData} margin={{ top: 20, right: 30, left: 20, bottom: 85 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                            <BarChart data={gapData} layout="vertical" margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={false} />
                                 <XAxis
-                                    dataKey="name"
+                                    type="number"
                                     stroke="#9ca3af"
                                     fontSize={12}
                                     tickLine={false}
                                     axisLine={false}
-                                    interval={0}
-                                    tick={<CustomTick />}
                                 />
-                                <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis
+                                    dataKey="name"
+                                    type="category"
+                                    width={150}
+                                    tick={{ dx: 0 }}
+                                    padding={{ top: 0, bottom: 0 }}
+                                    stroke="#9ca3af"
+                                    fontSize={12}
+                                    tickLine={false}
+                                    axisLine={false}
+                                />
                                 <RechartsTooltip
                                     cursor={{ fill: '#ffffff05' }}
                                     contentStyle={{ backgroundColor: '#111827', borderColor: '#ffffff10', borderRadius: '8px' }}

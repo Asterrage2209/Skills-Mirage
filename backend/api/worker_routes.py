@@ -9,6 +9,7 @@ from worker_engine.reskilling_engine import generate_reskilling_path
 from worker_engine.worker_gemini import analyze_worker as gemini_analyze_worker
 from intelligence.vulnerability_index import compute_vulnerability_index
 import logging
+from datetime import datetime
 
 router = APIRouter(prefix="/worker", tags=["Worker"])
 
@@ -28,8 +29,8 @@ def get_worker_profile(current_user: dict = Depends(get_current_user)):
         "years_of_experience": current_user.get("years_of_experience"),
         "role_description": current_user.get("role_description"),
         "skills": current_user.get("skills", []),
-        "risk_score": current_user.get("risk_score"),
-        "ai_vulnerability": current_user.get("ai_vulnerability"),
+        "gemini_risk_score": current_user.get("gemini_risk_score"),
+        "reasoning": current_user.get("reasoning"),
         "reskilling_path": current_user.get("reskilling_path"),
         "gemini_analysis": current_user.get("gemini_analysis"),
     }
@@ -69,31 +70,28 @@ def update_worker_profile(profile: WorkerProfile, current_user: dict = Depends(g
     logging.info("Worker profile update called")
     logging.info(f"user_id: {current_user['_id']}")
     logging.info(f"job_role: {profile.job_role}")
-    logging.info(f"risk_score: {risk}")
-    logging.info(f"ai_vulnerability: {ai_vulnerability}")
     logging.info(f"gemini_risk_score: {gemini_analysis.get('risk_score')}")
 
-    # Save to MongoDB Native Document securely overriding previous iterations synchronously.
+    # Save to MongoDB
     users_collection.update_one(
-        {"_id": current_user["_id"]},
+        {"email": current_user["email"]},
         {"$set": {
+            "name": current_user.get("name"),
+            "email": current_user["email"],
             "job_role": profile.job_role,
             "city": profile.city,
-            "years_of_experience": profile.years_of_experience,
+            "years_experience": profile.years_of_experience,
             "role_description": profile.role_description,
-            "skills": parsed.get("skills", []),
-            "risk_score": risk,
-            "ai_vulnerability": ai_vulnerability,
-            "reskilling_path": path,
-            "gemini_analysis": gemini_analysis,
-        }}
+            "skills": profile.skills if profile.skills else parsed.get("skills", []),
+            "gemini_risk_score": gemini_analysis.get("risk_score") if gemini_analysis else None,
+            "reasoning": gemini_analysis.get("explanation") if gemini_analysis else None,
+            "updated_at": datetime.utcnow()
+        }},
+        upsert=True
     )
     logging.info("Mongo profile update successful")
 
     return {
         "parsed_profile": parsed,
-        "risk_score": risk,
-        "ai_vulnerability": ai_vulnerability,
-        "reskilling_path": path,
         "gemini_analysis": gemini_analysis,
     }

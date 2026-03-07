@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User, Briefcase, MapPin, Search, Layers, Info, Sparkles, TrendingUp, ShieldAlert, ShieldCheck, ArrowRightCircle } from 'lucide-react';
-import { analyzeWorkerApi, getWorkerProfileApi, WorkerAnalyzeResponse, GeminiAnalysis } from '../../services/api';
+import { User, Briefcase, MapPin, Search, Layers, Sparkles, TrendingUp, ShieldAlert, ShieldCheck, ArrowRightCircle, Info } from 'lucide-react';
+import { analyzeWorkerApi, getWorkerProfileApi, GeminiAnalysis } from '../../services/api';
 
 type FormState = {
   title: string;
@@ -30,9 +30,6 @@ const WorkerIntelligence = () => {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [results, setResults] = useState<WorkerAnalyzeResponse | null>(null);
-  const [riskScore, setRiskScore] = useState<number | null>(null);
-  const [aiVulnerability, setAiVulnerability] = useState<number | null>(null);
   const [geminiAnalysis, setGeminiAnalysis] = useState<GeminiAnalysis | null>(null);
 
   // Persist form state to localStorage
@@ -54,29 +51,8 @@ const WorkerIntelligence = () => {
           skills: profile.skills ? profile.skills.join(', ') : ''
         }));
 
-        if (profile.risk_score !== null && profile.risk_score !== undefined) {
-          setRiskScore(profile.risk_score);
-        }
-        if (profile.ai_vulnerability !== null && profile.ai_vulnerability !== undefined) {
-          setAiVulnerability(profile.ai_vulnerability);
-        }
         if (profile.gemini_analysis) {
           setGeminiAnalysis(profile.gemini_analysis);
-        }
-
-        if (profile.reskilling_path) {
-          setResults({
-            parsed_profile: {
-              role: profile.job_role || '',
-              city: profile.city || '',
-              experience: profile.years_of_experience || 0,
-              skills: profile.skills || []
-            },
-            risk_score: profile.risk_score || 0,
-            ai_vulnerability: profile.ai_vulnerability || 0,
-            reskilling_path: profile.reskilling_path,
-            gemini_analysis: profile.gemini_analysis || null,
-          });
         }
       } catch (err) {
         // Silent catch unless it's a critical unauthenticated fault
@@ -100,9 +76,6 @@ const WorkerIntelligence = () => {
         role_description: formState.description,
         skills: formState.skills ? formState.skills.split(',').map(s => s.trim()).filter(Boolean) : []
       });
-      setResults(res);
-      setRiskScore(res.risk_score);
-      setAiVulnerability(res.ai_vulnerability);
       setGeminiAnalysis(res.gemini_analysis || null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to analyze worker profile');
@@ -207,47 +180,62 @@ const WorkerIntelligence = () => {
         </div>
 
         <div className="space-y-6">
-          {(results || riskScore !== null || geminiAnalysis) ? (
+          {geminiAnalysis ? (
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
 
               {/* ── Gemini AI Analysis Card ──────────────────────────────── */}
-              {geminiAnalysis && (
-                <div className={`card ${cfg.border} bg-gradient-to-b ${cfg.bg}`}>
-                  <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-4">
-                    <Sparkles className="w-5 h-5 text-purple-400" />
-                    <h3 className="text-lg font-bold text-white">AI Risk Assessment</h3>
-                    <span className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.color} bg-white/5 border ${cfg.border}`}>
-                      <RiskIcon className="w-3.5 h-3.5" />
-                      {riskLevel.toUpperCase()}
-                    </span>
-                  </div>
+              <div className={`card ${cfg.border} bg-gradient-to-b ${cfg.bg}`}>
+                <div className="flex items-center gap-2 mb-4 border-b border-white/5 pb-4">
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                  <h3 className="text-lg font-bold text-white">AI Risk Assessment</h3>
+                  <span className={`ml-auto inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${cfg.color} bg-white/5 border ${cfg.border}`}>
+                    <RiskIcon className="w-3.5 h-3.5" />
+                    {riskLevel.toUpperCase()}
+                  </span>
+                </div>
 
-                  {geminiAnalysis.risk_score !== null && (
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-sm font-bold text-textSecondary">Gemini Risk Score</h3>
-                      <div className={`text-2xl font-black ${cfg.color}`}>
-                        {Math.round(geminiAnalysis.risk_score)}
-                        <span className="text-sm text-textSecondary font-normal">/100</span>
-                      </div>
+                {geminiAnalysis.risk_score !== null && (
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-bold text-textSecondary">Gemini Risk Score</h3>
+                    <div className={`text-2xl font-black ${cfg.color}`}>
+                      {Math.round(geminiAnalysis.risk_score)}
+                      <span className="text-sm text-textSecondary font-normal">/100</span>
                     </div>
-                  )}
-
-                  <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mb-4">
-                    <div
-                      className={`h-full rounded-full transition-all duration-700 ${riskLevel === 'high' ? 'bg-red-500' : riskLevel === 'moderate' ? 'bg-yellow-500' : 'bg-emerald-500'
-                        }`}
-                      style={{ width: `${Math.min(100, Math.max(0, geminiAnalysis.risk_score ?? 0))}%` }}
-                    />
                   </div>
+                )}
 
-                  {geminiAnalysis.explanation && (
-                    <p className="text-textSecondary text-sm leading-relaxed">{geminiAnalysis.explanation}</p>
-                  )}
+                <div className="w-full bg-secondary h-2 rounded-full overflow-hidden mb-4">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${riskLevel === 'high' ? 'bg-red-500' : riskLevel === 'moderate' ? 'bg-yellow-500' : 'bg-emerald-500'
+                      }`}
+                    style={{ width: `${Math.min(100, Math.max(0, geminiAnalysis.risk_score ?? 0))}%` }}
+                  />
+                </div>
+
+                {geminiAnalysis.explanation && (
+                  <p className="text-textSecondary text-sm leading-relaxed">{geminiAnalysis.explanation}</p>
+                )}
+              </div>
+
+              {/* ── New Skills to Learn (shown when risk moderate or high) ─ */}
+              {geminiAnalysis.new_skills && geminiAnalysis.new_skills.length > 0 && (
+                <div className="card">
+                  <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                    <h3 className="text-lg font-bold text-white">Recommended New Skills</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {geminiAnalysis.new_skills.map((skill, i) => (
+                      <span key={i} className="px-3 py-1.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               )}
 
               {/* ── Pivot Roles (shown when risk is high) ────────────────── */}
-              {geminiAnalysis && geminiAnalysis.pivot_roles && geminiAnalysis.pivot_roles.length > 0 && (
+              {geminiAnalysis.pivot_roles && geminiAnalysis.pivot_roles.length > 0 && (
                 <div className="card">
                   <div className="flex items-center gap-2 mb-4">
                     <ArrowRightCircle className="w-5 h-5 text-accent" />
@@ -264,90 +252,39 @@ const WorkerIntelligence = () => {
                 </div>
               )}
 
-              {/* ── New Skills to Learn (shown when risk moderate or high) ─ */}
-              {geminiAnalysis && geminiAnalysis.new_skills && geminiAnalysis.new_skills.length > 0 && (
-                <div className="card">
-                  <div className="flex items-center gap-2 mb-4">
-                    <TrendingUp className="w-5 h-5 text-emerald-400" />
-                    <h3 className="text-lg font-bold text-white">Recommended New Skills</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {geminiAnalysis.new_skills.map((skill, i) => (
-                      <span key={i} className="px-3 py-1.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
+              {/* ── Methodology ────────────────────────────────────────────── */}
+              <div className="card">
+                <div className="flex items-center gap-2 mb-4 text-white">
+                  <Info className="w-5 h-5 text-accent" />
+                  <h3 className="text-lg font-bold">Methodology</h3>
                 </div>
-              )}
-
-              {/* ── Local Engine Risk Score ───────────────────────────────── */}
-              <div className="card border-red-500/30 bg-gradient-to-b from-card to-red-500/5">
-                <div className="flex items-center justify-between mb-4 border-b border-white/5 pb-4">
-                  <h3 className="text-lg font-bold text-white">AI Vulnerability Index</h3>
-                  <div className="text-3xl font-black text-orange-400">
-                    {Math.round(aiVulnerability ?? (results?.ai_vulnerability || 0))}
+                <div className="space-y-4">
+                  <div className="p-3 bg-secondary/50 rounded-xl border border-white/5">
+                    <p className="text-xs font-semibold text-accent uppercase mb-2">Risk Score Formula</p>
+                    <code className="text-[10px] text-textSecondary block leading-relaxed whitespace-pre-line">
+                      Risk Score =
+                      (Automation Probability × 0.4)
+                      + (Skill Replaceability × 0.3)
+                      + (Task Repetition Level × 0.2)
+                      + (AI Tool Adoption Rate × 0.1)
+                    </code>
+                    <ul className="mt-2 space-y-1 text-[10px] text-textSecondary/80">
+                      <li>• Automation Probability → likelihood that job tasks can be automated</li>
+                      <li>• Skill Replaceability → how easily the required skills can be replaced by AI tools</li>
+                      <li>• Task Repetition Level → how repetitive the role's tasks are</li>
+                      <li>• AI Tool Adoption Rate → current adoption of AI tools in that domain</li>
+                    </ul>
+                    <p className="mt-2 text-[10px] text-accent/80 font-medium">Scores are normalized to a 0–100 scale.</p>
                   </div>
-                </div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-bold text-textSecondary">Risk Score</h3>
-                  <div className="text-xl font-bold text-red-500">
-                    {Math.round(riskScore ?? (results?.risk_score || 0))}
-                    <span className="text-sm text-textSecondary font-normal">/100</span>
+                  <div>
+                    <p className="text-xs font-semibold text-accent uppercase mb-1">Pivot Role Logic</p>
+                    <p className="text-[11px] text-textSecondary leading-relaxed">
+                      Our engine identifies transition paths by mapping current operational fatigue to AI-resilient growth roles using the latest LLM intelligence from Google Gemini.
+                    </p>
                   </div>
-                </div>
-
-                {results && (
-                  <p className="text-textSecondary text-sm leading-relaxed mb-4">
-                    Parsed skills: {results.parsed_profile.skills.join(', ') || 'none detected'}
-                  </p>
-                )}
-                <div className="w-full bg-secondary h-2 rounded-full overflow-hidden">
-                  <div className="bg-red-500 h-full" style={{ width: `${Math.min(100, Math.max(0, riskScore ?? (results?.risk_score || 0)))}%` }}></div>
                 </div>
               </div>
 
-              {results && (
-                <>
-                  <div className="card">
-                    <h3 className="text-lg font-bold text-white mb-4">Suggested Pivot Role</h3>
-                    <div className="p-3 bg-secondary rounded-xl border border-white/5 mb-4">
-                      <div className="font-semibold text-white text-sm">{results.reskilling_path.target_role}</div>
-                    </div>
-                    <ul className="space-y-2">
-                      {results.reskilling_path.plan.map((step) => (
-                        <li key={step} className="text-sm text-textSecondary">• {step}</li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="card">
-                    <div className="flex items-center gap-2 mb-4 text-white">
-                      <Info className="w-5 h-5 text-accent" />
-                      <h3 className="text-lg font-bold">Risk Methodology</h3>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="p-3 bg-secondary/50 rounded-xl border border-white/5">
-                        <p className="text-xs font-semibold text-accent uppercase mb-2">Risk Score Formula</p>
-                        <code className="text-[10px] text-textSecondary block leading-relaxed">
-                          Risk = Base Risk + (Regional Adjust × 0.1) - (Exp Reduction) + (Entry Penalty)
-                        </code>
-                        <ul className="mt-2 space-y-1 text-[10px] text-textSecondary/80">
-                          <li>• Base Risk: Calculated from role automation vulnerability.</li>
-                          <li>• Exp Reduction: Up to 25 points reduction based on years of tenure.</li>
-                          <li>• Entry Penalty: 15 point addition for users with &lt; 1 year experience.</li>
-                        </ul>
-                      </div>
-                      <div>
-                        <p className="text-xs font-semibold text-accent uppercase mb-1">Pivot Role Logic</p>
-                        <p className="text-[11px] text-textSecondary leading-relaxed">
-                          Our engine identifies transition paths by mapping current operational fatigue to AI-resilient growth roles. BPO profiles are prioritized for AI Content Moderation, while general roles pivot toward Data Analytics.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
             </div>
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/10 rounded-2xl">

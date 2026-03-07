@@ -137,12 +137,6 @@ export type WorkerProfileResponse = {
   years_of_experience: number | null;
   role_description: string | null;
   skills: string[];
-  risk_score: number | null;
-  ai_vulnerability: number | null;
-  reskilling_path: {
-    target_role: string;
-    plan: string[];
-  } | null;
   gemini_analysis: GeminiAnalysis | null;
 };
 
@@ -157,12 +151,6 @@ export type WorkerAnalyzeResponse = {
     city: string;
     experience: number;
     skills: string[];
-  };
-  risk_score: number;
-  ai_vulnerability: number;
-  reskilling_path: {
-    target_role: string;
-    plan: string[];
   };
   gemini_analysis: GeminiAnalysis | null;
 };

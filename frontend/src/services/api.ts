@@ -195,3 +195,54 @@ export async function loginApi(data: any): Promise<{ access_token: string, token
   });
   return toJson<{ access_token: string, token_type: string }>(res);
 }
+
+// ── Reskilling types & API ───────────────────────────────────────────────────
+
+export type RecommendedSkill = {
+  skill: string;
+  reason: string;
+};
+
+export type RecommendedCourse = {
+  name: string;
+  source: string;
+  url: string;
+  duration: string;
+  matched_skills: string[];
+};
+
+export type RecommendedJob = {
+  title: string;
+  company: string;
+  location: string;
+  required_skills: string[];
+  match_reason: string;
+};
+
+export type LearningStep = {
+  week: string;
+  title: string;
+  description: string;
+};
+
+export type ReskillingResponse = {
+  recommendation_type: 'upskilling' | 'reskilling' | null;
+  summary: string;
+  recommended_skills: RecommendedSkill[];
+  recommended_courses: RecommendedCourse[];
+  recommended_jobs: RecommendedJob[];
+  learning_path: LearningStep[];
+  error: string | null;
+};
+
+export async function getReskillingApi(): Promise<ReskillingResponse> {
+  const res = await fetchWithAuth(`${API_BASE}/worker/reskilling`);
+  return toJson<ReskillingResponse>(res);
+}
+
+export async function generateReskillingApi(): Promise<ReskillingResponse> {
+  const res = await fetchWithAuth(`${API_BASE}/worker/reskilling`, {
+    method: 'POST',
+  });
+  return toJson<ReskillingResponse>(res);
+}

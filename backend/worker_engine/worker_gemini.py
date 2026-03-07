@@ -18,8 +18,6 @@ Pivot Role Logic
 
 Our engine identifies transition paths by mapping current operational fatigue to AI-resilient growth roles. BPO profiles are prioritized for AI Content Moderation, while general roles pivot toward Data Analytics.
 
-the output should be of the form : pivot roles and new skills to add.
-
 IMPORTANT: You MUST respond ONLY with valid JSON in this exact format, no extra text:
 {
   "risk_score": <number between 0-100>,

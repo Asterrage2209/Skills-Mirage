@@ -103,3 +103,59 @@ def update_worker_profile(profile: WorkerProfile, current_user: dict = Depends(g
         "parsed_profile": parsed,
         "gemini_analysis": gemini_analysis,
     }
+
+
+# ── Reskilling endpoints ──────────────────────────────────────────────────────
+
+@router.get("/reskilling")
+def get_reskilling(current_user: dict = Depends(get_current_user)):
+    """Return the cached reskilling result from MongoDB (if any)."""
+    cached = current_user.get("reskilling_result")
+    if cached:
+        return cached
+    return {
+        "recommendation_type": None,
+        "summary": "No reskilling analysis generated yet. Click 'Generate' to create one.",
+        "recommended_skills": [],
+        "recommended_courses": [],
+        "recommended_jobs": [],
+        "learning_path": [],
+        "error": None,
+    }
+
+
+@router.post("/reskilling")
+def create_reskilling(current_user: dict = Depends(get_current_user)):
+    """Generate a new Gemini-powered reskilling path for the authenticated user."""
+    job_role = current_user.get("job_role")
+    if not job_role:
+        return {
+            "recommendation_type": None,
+            "summary": "Please fill in your Worker Analysis profile first.",
+            "recommended_skills": [],
+            "recommended_courses": [],
+            "recommended_jobs": [],
+            "learning_path": [],
+            "error": "No worker profile found. Submit your profile on the Worker Analysis page first.",
+        }
+
+    result = generate_reskilling_path(
+        job_title=job_role,
+        city=current_user.get("city", ""),
+        experience=float(current_user.get("years_experience", 0) or 0),
+        skills=current_user.get("skills", []),
+        gemini_analysis=current_user.get("gemini_analysis"),
+    )
+
+    logging.info("Reskilling path generated for user %s", current_user.get("email"))
+
+    # Persist to MongoDB
+    users_collection.update_one(
+        {"email": current_user["email"]},
+        {"$set": {
+            "reskilling_result": result,
+            "reskilling_updated_at": datetime.utcnow(),
+        }},
+    )
+
+    return result
